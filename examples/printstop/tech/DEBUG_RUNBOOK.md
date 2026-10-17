@@ -20,6 +20,10 @@ order_product_id, api_order_id (= Printstop `orders_id`), environment, time wind
 | Order placed but "no code" error | `formatOrderResponse` saw no `orders_id` (e.g. `success:"true"` without id) | raw response in Mongo |
 | Timeout on place order | order may exist at Printstop, and we cannot look it up by reference | ask Printstop by reference_number / email; manual reconcile; never blind-retry |
 | Status stuck at 1 | unmapped `orders_status` value | log `Printstop: unmapped webhook status`; add the lowercase key to `webhookConfigs.orderStatus` |
+| Several token rows / token calls per refresh | credentials not nested under one key (fetchAccessToken runs per key) | vendor config `credentials` shape |
+| Same status email sent every poll | suspected base bug `order.order_Product_Id` casing (MC ~:1040) | compare email logs with poll runs; table DDL column name |
+| Every 2nd order gets 409 | one-order-per-user store with a constant profile email (Model A) | ask Printstop to lift the per-user limit (Q3) |
+| Returned orders still polled | RETURNED (10) is not terminal for the polling query | expected; raise a base change if volume matters |
 | Polling stops for all Printstop orders | one bad response aborts the loop; or the id is missing from `merchandiseOrderTrackingVendorIds` | `Error while Merchandise order tracking` / Teams card |
 | No tracking shown | not dispatched yet (fields blank until dispatch) or formatter mapping | order_status response: `tracking_number`, `tracking_url`, `shipping_company` |
 | Products all disabled after sync | partial catalogue fetch (details call failed silently) | `received N products` vs `Formatted N products`; the formatter must throw |

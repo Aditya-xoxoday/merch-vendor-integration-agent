@@ -71,6 +71,10 @@ Reference vendors: `Dpanda.ts` (newest, fixedSku), `verdical.ts` / `lakee.ts` (s
   }
 }
 ```
+**Credentials shape:** `/vendor/updateAccessToken` calls `fetchAccessToken(credentialKey)` once **per
+key** of `configs.credentials`. A token vendor with one login must nest every field under one key,
+`{"<tokenKey>": {"clientId": …, "clientSecret": …}}`. Flat keys would trigger one token call per field.
+
 Rules: `merchandiseVendor` MUST be true (else no merch row and the first status update crashes);
 `orderStatus` values only the six (single-L CANCELED, never ORDER_FAILED); `fixedSku` requires
 `skuTable`; `baseUrl`, `maxApiAtaTime`, `maxCardsPerRequest` truthy; no `null` in `vendorData`;
@@ -89,9 +93,14 @@ headers in `vendorCallLogger.mongo.redactHeaders`; then `npm run merge-configs` 
 - karma_reports balance module only if a balance endpoint exists.
 
 ## 5. Platform limits
-No outbound cancel. RETURNED (10) emails but does not refund. Async failure before confirmation has
+No outbound cancel. RETURNED (10) emails but does not refund, and it is not terminal for polling
+(the loop only skips 3 and 5), so returned orders are polled forever. Async failure before confirmation has
 no base path. Signed webhooks, non-JSON webhooks and non-AES encryption need a base change. One bad
 order aborts a vendor's polling loop. plumAuth accepts webhooks even if VI fails downstream.
+Suspected base bug (merch-sensei): `order.order_Product_Id` casing at MC ~:1040 may re-send status
+emails on every poll. Polling-only vendors are most exposed, so verify it before go-live.
+Status emails for Plum Pro (store 4) clients need `allowMerchandiseEmailClientIds`. Dpanda caveat: its
+refetch reads only `data.insert_id`; use `data.insert_id ?? data.externalOrderId`.
 
 ## 6. Debug signals (for the vendor runbook)
 | Symptom | Signal |

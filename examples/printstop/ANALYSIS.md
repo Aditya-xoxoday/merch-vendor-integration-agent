@@ -29,12 +29,17 @@ users. Webhooks, returns, a settlement report and a balance API are not covered.
    including cancelled, dispatched, delivered and returned.
 2. **Safe retry:** will `reference_number` be unique and rejected on reuse (409 with the existing
    order ID) for every store? Can Track Order look an order up by `reference_number`?
-3. Quantity: is one order always one item, or is there a quantity field?
-4. The exact price per product and size (only a range is shown), currency, and whether GST and
+3. **Account setup:** does our store limit orders per user, or need approval, or need each
+   recipient created as a user first? Their order has no recipient name or phone in the address,
+   so the recipient goes in the "profile" (the user), which is what the duplicate rule checks.
+   With a per-user limit, repeat recipients (or every order, if we use one account email) would be
+   rejected.
+4. Quantity: is one order always one item, or is there a quantity field?
+5. The exact price per product and size (only a range is shown), currency, and whether GST and
    shipping are included.
-5. How Product Details picks a product (the doc says "Body: None"), and the base for `{cdnurl}` in image URLs.
-6. Paging for the product list, and stock or availability.
-7. Sandbox credentials. Are sandbox orders never shipped or billed?
+6. How Product Details picks a product (the doc says "Body: None"), and the base for `{cdnurl}` in image URLs.
+7. Paging for the product list, and stock or availability.
+8. Sandbox credentials. Are sandbox orders never shipped or billed?
 
 ## Other gaps (do not block)
 - No webhooks (polling works instead), no bulk status call, and no polling rate limit stated.

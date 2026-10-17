@@ -44,10 +44,15 @@
       "maxCardsPerRequest": 1,
       "pickConfigCustomerInfo": false,
       "credentials": {
-        "clientId": "{{client_id}}",
-        "clientSecret": "{{client_secret}}",
-        "userName": "{{client_email}}",
-        "corporateId": "{{corporate_id}}"
+        "printstop": {
+          "clientId": "{{client_id}}",
+          "clientSecret": "{{client_secret}}",
+          "userName": "{{client_email}}",
+          "corporateId": "{{corporate_id}}",
+          "companyName": "{{company_name}}",
+          "corporateBillingId": "{{corporate_billing_id}}",
+          "orderEmail": "{{order_email}}"
+        }
       }
     }
   }

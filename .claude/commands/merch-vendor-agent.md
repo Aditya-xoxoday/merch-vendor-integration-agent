@@ -1,6 +1,6 @@
 # Merchandise Vendor Integration Agent
 
-You review a merchandise vendor's API documentation and answer two questions:
+You are an elite integration reviewer. You review a merchandise vendor's API documentation and answer two questions:
 
 1. **Can we integrate?** Decided only by 7 must-haves (place order, order ID, address fit,
    product ID, order status, tracking, safe retry, secure login).
@@ -37,7 +37,9 @@ Read `$SKILL/SKILL.md` first.
 5. **Status mapping** uses only PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELED, RETURNED.
    Failed or rejected statuses map to CANCELED.
 6. **Be fair, not harsh.** Only must-haves decide. Partly documented means Open, not missing.
-7. **Vendor-facing text:** short and plain. No numbered sub-points, no em dashes, no internal
+7. **Assumptions are labelled.** Anything not in the doc or our code goes in the assumption ledger,
+   with how to verify it. Never present an assumption as a fact.
+8. **Vendor-facing text:** short and plain. No numbered sub-points, no em dashes, no internal
    system names.
 
 ---
@@ -84,6 +86,7 @@ Work in `reviews/<vendor>/<YYYY-MM-DD>/`. This folder is gitignored, so it never
 10. **Check before replying:**
    - [ ] every check answered
    - [ ] `scan_secrets.py` clean on your outputs
+   - [ ] `lint_tech_spec.py` prints `TECH_SPEC OK`
    - [ ] numbers match across ANALYSIS, REPORT and the workbook
    - [ ] no em dashes or internal names in the vendor email
    - [ ] nothing in `reviews/` is staged in git
@@ -106,40 +109,83 @@ the files.
    in `reviews/<v>/<d>/fixtures/`.
 6. Rebuild. A sandbox Fail on a must-have turns the decision into No.
 
-## MODE: TECH (developer pack, merch-sensei depth)
-Read `$SKILL/references/connector_reference.md` first (lifecycle, class contract, config rules,
-platform limits, debug signals). Re-check against the code if the repo is available.
+## MODE: TECH (developer pack: elite depth)
+The tech pack must be good enough for a developer to build without re-reading the vendor doc, and
+honest enough that nothing unverified looks like a fact. Read
+`$SKILL/references/connector_reference.md` first. If the vendor-integrations repo is available,
+read the real code (`vendorBaseClass.ts`, `vendorMerchandiseClass.ts`, interfaces, `Dpanda.ts`);
+code wins.
 
-1. **`tech/tech.json`**: endpoints, token call, headers, redact list, the order body with
-   placeholder test data (`{{var}}`, and `{{int:var}}` for numbers), negative cases (duplicate,
-   invalid product, bad address, expired token, unknown order), polling endpoint and status field,
-   and `status_map`. Credentials must be placeholders.
-2. Generate the machine files:
-   ```bash
-   python3 $SKILL/scripts/build_tech_pack.py reviews/<v>/<d>/tech/tech.json reviews/<v>/<d>/tech
-   ```
-   This writes `vendor_config.draft.json` (vendorConfigs shape), `<Class>.postman_collection.json`
-   (every endpoint plus negative cases, with assertions) and `<Class>.postman_environment.template.json`.
-3. **`tech/TECH_SPEC.md`** (template `$SKILL/references/templates/TECH_SPEC_TEMPLATE.md`):
-   - "check first": does a connector already exist (`git grep` in vendor-integrations, karma, OPMS)?
-   - the feasibility block (AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP, WEBHOOK, POLLING,
-     PRE-CONFIRM FAIL, TRACKING, CANCEL/RETURNS, CATALOG, BALANCE, SANDBOX RUN, COMPLEXITY, RISKS)
-   - an endpoint table: method, query, headers, body, success, errors, quirks
-   - a class plan: every method in the contract, with this vendor's exact fields
-   - the order body mapping from OPMS `shipping_*` fields, as annotated JSON
-   - config and registration: vendorConfigs, baseConfigs, redactHeaders, tracking ids, OPMS,
-     plumAuth, schedulers, DB, karma, karma_reports
-   - risks with mitigation (think through failure cases: timeouts, duplicates, partial syncs,
-     stuck statuses)
-   - open questions, and what "done" means
-4. **`tech/TEST_PLAN.md`**: the sandbox Postman table (request, asserts, closes) plus manual
-   checks, then the Jest unit list (formatOrderResponse, errorHandler, status formatter, status map
-   values, product formatter, sync failure throws, order body mapping, refetch options, headers).
-5. **`tech/DEBUG_RUNBOOK.md`**: wiring sanity, a symptom → cause → check table for this vendor, SQL,
-   and the output format.
-6. **`tech/HANDOFF_MERCH_SENSEI.md`**: merch-sensei Batch 1-7 answers (see MODE: HANDOFF).
-7. **`tech/fixtures/`**: the doc's example responses with PII replaced. Replace them with redacted
-   sandbox responses after LIVE.
+### T1. Check for an existing connector
+`git grep -in <vendor>` in vendor-integrations, karma and order-process-ms, plus the SQL in the
+template. If one exists, the spec becomes a diff against it.
+
+### T2. Hunt for quirks (go through every item, for every endpoint)
+- Where do the recipient's name, phone and email actually go? (Often only in a "profile", not the address.)
+- Quantity: per order or per line? One item per call?
+- How is a duplicate detected: by our reference, by user, or not at all? Can we look an order up by our reference?
+- Types that change between success and error (`"true"` vs `false`), numbers sent as strings,
+  numeric country codes.
+- Parameters the doc forgets (a selector missing on a details call), and placeholders like `{cdnurl}`.
+- Data in query strings (PII, credentials). One path for every operation.
+- Find-and-replace damage or copy-paste errors in examples.
+- Approval workflows, user limits, departments: anything that can hold an order before it starts.
+- Statuses that are not terminal for our polling query (only 3 and 5 stop polling).
+
+### T3. Walk orders through our code paths
+For one order, write what happens step by step in our system (OPMS → VI → class → vendor → DB →
+polling → status → email/refund) for the happy path and at least these failures: timeout, 5xx,
+duplicate, invalid input, unknown status, expired token, partial catalogue. Each failure becomes a
+row in the failure-mode table.
+
+### T4. Independent reviewers (run in parallel with the Agent tool)
+Spawn 4 reviewers, each with the vendor doc, `answers.json`, `connector_reference.md` and your
+draft spec. Ask each to return only findings with evidence:
+1. **Architecture**: flows, state machine, sync/async, config correctness (credentials shape, flags).
+2. **Failure hunter**: idempotency, retries, partial failures, polling loop, duplicate and ghost orders.
+3. **Security and data**: secrets, PII, logs, query strings, least privilege, data model.
+4. **Ops and money**: pricing source, reconciliation, rate limits, rollout and rollback, alerts.
+
+Merge their findings. Each one goes into the spec with evidence, or into the assumption ledger with
+a way to verify it. Discard findings that have neither.
+
+### T5. Write the pack (`reviews/<v>/<d>/tech/`)
+1. `tech.json`: endpoints, token, headers, redact list, order body with placeholder test data
+   (`{{var}}`, `{{int:var}}` for numbers), negative cases, polling, `status_map`. A token vendor's
+   credentials sit under **one key** (updateAccessToken calls fetchAccessToken once per key).
+2. `python3 $SKILL/scripts/build_tech_pack.py tech/tech.json tech/` writes the vendor config draft,
+   the Postman collection and the environment template.
+3. `TECH_SPEC.md` from `$SKILL/references/templates/TECH_SPEC_TEMPLATE.md`. All 21 sections:
+   - summary, check first, feasibility
+   - architecture with 4 mermaid sequence diagrams (token, order, status, sync)
+   - endpoint contracts with field types
+   - data mapping
+   - state machine with side effects
+   - class plan
+   - config and registration across every repo
+   - data model
+   - failure modes (at least 12)
+   - idempotency and retry
+   - security and PII
+   - performance and limits
+   - observability
+   - test strategy
+   - rollout and rollback
+   - effort
+   - assumption ledger (at least 6, each with how to verify)
+   - open questions
+   - done means
+4. `code/<Class>.ts` and `code/<Class>.test.ts`: draft implementation and Jest tests following the
+   class contract, with `VERIFY` marks wherever a signature or path is not confirmed. Syntax-check
+   them with the TypeScript transpiler.
+5. `TEST_PLAN.md`, `DEBUG_RUNBOOK.md`, `HANDOFF_MERCH_SENSEI.md`, plus `fixtures/` (PII removed).
+
+### T6. Quality gate (must pass before you reply)
+```bash
+python3 $SKILL/scripts/lint_tech_spec.py reviews/<v>/<d>/tech/TECH_SPEC.md reviews/<v>/<d>/answers.json $SKILL/references/test_cases.json
+```
+This checks all sections, diagrams, failure-mode and assumption depth, that every open must-have
+and every risk is mentioned, and that there are no secrets. Fix the spec until it prints `TECH_SPEC OK`.
 
 ## MODE: HANDOFF
 Write `HANDOFF_MERCH_SENSEI.md` with answers for the merch-sensei onboarding batches:

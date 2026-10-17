@@ -1,52 +1,78 @@
 # {Vendor}: technical spec
 
-Source: {doc, date}. Contract per `references/connector_reference.md`. **Code wins over this file.**
-
-> **Check first:** does a connector already exist? `git grep -in {vendor}` in vendor-integrations,
-> karma and order-process-ms. If yes, this spec is a diff against it.
-
-## 1. Feasibility
-```
-AUTH            ✅/⚠️/❌ {type} → {static header / tokens table via updateAccessToken}; TTL {..}
-ORDER           ✅/⚠️/❌ {path} → {id field}; sync/async → iswebhookConfiration {true/false}
-IDEMPOTENCY     ✅/⚠️/❌ {reference field; duplicate behaviour; lookup by reference?}
-ADDRESS         ✅/⚠️/❌ {shipping_* mapping; constants; country/state/phone formats}
-STATUS MAP      ✅/⚠️/❌ {n} statuses → six targets
-WEBHOOK         ✅/⚠️/❌/➖ {JSON? data key? signed? encrypted? our id carried?}
-POLLING         ✅/⚠️/❌/➖ {endpoint; status field = orders_status? (else override)}
-PRE-CONFIRM FAIL ✅/⚠️ {can an accepted order fail before confirm?}
-TRACKING        ✅/⚠️/❌ {fields}
-CANCEL/RETURNS  ⚠️ {outbound cancel unsupported; returns process}
-CATALOG         ✅/⚠️/❌ {paging; sku format; brand; stock; fails loudly}
-BALANCE         ✅/➖ {karma_reports module or none}
-SANDBOX RUN     {n}/{n} requests · {x}/{y} assertions
-COMPLEXITY      Low / Medium / High ({why})
-RISKS           {list}
-```
-
-## 2. Endpoints
-| Op | Method + path | Headers | Body | Success | Errors |
-|---|---|---|---|---|---|
-Quirks: {...}
-
-## 3. Class plan: `src/vendors/integratedVendors/{ClassName}.ts`
-| Method | Implementation for this vendor |
+| | |
 |---|---|
-| fetchAccessToken / getReqHeaders / getPlaceOrderReqOptions / formatOrderResponse / getVoucherValidity / errorHandler / getRefetchOrderReqOptions / formatWebhookOrderStatusResponse / fetchTrackingDetailsFromVendor / getVendorProducts / formatProductResponse / formatWebhookProductResponse | {exact fields} |
+| Source | {doc, date} |
+| Contract | `references/connector_reference.md` (code wins) |
+| Status | {docs reviewed / sandbox run x/y} |
+| Companion files | tech.json, vendor_config.draft.json, Postman collection, code/, TEST_PLAN, DEBUG_RUNBOOK, HANDOFF, fixtures |
 
-## 4. Order body mapping
-```jsonc
-{ /* vendor body, each field annotated with the OPMS source field or constant */ }
-```
+All 21 sections are required (`lint_tech_spec.py` checks them). Example: `examples/printstop/tech/TECH_SPEC.md`.
 
-## 5. Config and registration
-vendorConfigs ({link to vendor_config.draft.json}), baseConfigs (vendorClassIdMapping, tracking ids,
-redactHeaders), OPMS, plumAuth, schedulers, DB, karma, karma_reports.
+## 0. Summary
+Decision in one line, then the 3 design-level issues (table: issue, why it matters, check IDs).
 
-## 6. Risks (with mitigation)
-### 6.1 {risk} ({severity})
+## 1. Check first: existing connector
+`git grep` commands + SQL, and a finding → action table (diff vs new build).
 
-## 7. Open questions for the vendor (blocking first)
+## 2. Feasibility
+merch-sensei block: AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP, WEBHOOK, POLLING, PRE-CONFIRM FAIL,
+TRACKING, CANCEL/RETURNS, CATALOG, BALANCE, SANDBOX RUN, COMPLEXITY.
 
-## 8. Done means
-Sandbox {n}/{n}; unit tests green; `npm run merge-configs && npx tsc && npm run lint && npx jest tests/vendors/{vendor}`; staging smoke 1 → 2 → 3.
+## 3. Architecture and flows
+4 mermaid sequence diagrams: token, place order (happy / timeout / duplicate), status updates, catalogue sync.
+
+## 4. Endpoint contracts
+Per endpoint: method + query, headers, body field table (path, type, required, notes), response field
+table, errors. Then cross-cutting quirks.
+
+## 5. Data mapping
+Order body (vendor field ← our source, rule), recipient identity decision, status/tracking/date
+mapping, product mapping to table columns.
+
+## 6. State machine
+Vendor status → deliveryStatus → mvod.status → side effects (egift row, email, refund, polling stops?).
+Mark undocumented rows.
+
+## 7. Class plan
+Method table: behaviour, throws-when. Lint rules. Link to `code/`.
+
+## 8. Config and registration
+Table: where, change, tracked? (VI vendor config with the credentials shape, baseConfigs, OPMS,
+plumAuth, schedulers, DB, karma, karma_reports).
+
+## 9. Data model
+Tables and columns used.
+
+## 10. Failure modes
+At least 12 rows: step, failure, detection, handling, severity.
+
+## 11. Idempotency and retry
+Timeout path, duplicate path, our own guard.
+
+## 12. Security and PII
+Secrets, redaction, PII sent and returned, query strings, transport, DPA.
+
+## 13. Performance and limits
+Call volumes (order, polling, sync), rate limits, concurrency settings.
+
+## 14. Observability
+Signal, source, alert.
+
+## 15. Test strategy
+Sandbox (Postman) and unit (Jest) summary; link TEST_PLAN.
+
+## 16. Rollout and rollback
+Staging → UAT → limited prod → full; rollback steps.
+
+## 17. Effort
+Work item and estimate, with what the estimate assumes.
+
+## 18. Assumption ledger
+At least 6 rows: assumption, risk if wrong, how to verify.
+
+## 19. Open questions
+Question, what it blocks, check IDs.
+
+## 20. Done means
+Checklist.

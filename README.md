@@ -32,7 +32,7 @@ See [docs/DECISION.md](docs/DECISION.md) for exactly how the result is worked ou
 | **ANALYZE** (default) | share a doc and say "analyze" | Full review pack |
 | **LIVE** | "run live" with sandbox credentials | Sandbox test results added |
 | **COMMS** | "vendor email", "jira comment", "summary" | Ready-to-send messages |
-| **TECH** | always, or "tech pack" | Developer pack at merch-sensei depth |
+| **TECH** | always, or "tech pack" | Developer pack: 21-section spec, draft code, Postman, tests, runbook |
 | **HANDOFF** | "hand off" (when the answer is yes) | Build brief for merch-sensei |
 | **DIFF** | a new version of a reviewed doc | What changed, new decision |
 
@@ -46,11 +46,13 @@ See [docs/DECISION.md](docs/DECISION.md) for exactly how the result is worked ou
 | `01_field_mapping.md` | Vendor fields mapped to our order and product fields |
 | `VENDOR_EMAIL.md`, `JIRA_COMMENT.md`, `SUMMARY.md` | Short, plain messages |
 
-**Developer tech pack (`tech/`), at merch-sensei depth:**
+**Developer tech pack (`tech/`):** built with independent reviewers (architecture, failure
+hunting, security and data, ops and money), checked by `lint_tech_spec.py` before it ships.
 
 | File | Contents |
 |---|---|
-| `TECH_SPEC.md` | Feasibility block, endpoint table, method-by-method class plan, order body mapping, config and registration, risks with mitigation, open questions, "done means" |
+| `TECH_SPEC.md` | 21 sections: summary, existing-connector check, feasibility, 4 sequence diagrams, endpoint contracts with types, data mapping, state machine, class plan, config across every repo, data model, failure modes (12+), idempotency, security and PII, performance, observability, tests, rollout and rollback, effort, assumption ledger, open questions, done means |
+| `code/<Vendor>.ts`, `code/<Vendor>.test.ts` | Draft connector class and Jest tests (syntax-checked; `VERIFY` marks where the base code must be confirmed) |
 | `vendor_config.draft.json` | `vendorConfigs` draft in merch-sensei shape (placeholder credentials) |
 | `<Vendor>.postman_collection.json` + env template | Every endpoint plus negative cases with assertions, ready for `postman collection run` on sandbox |
 | `TEST_PLAN.md` | Sandbox contract tests plus the Jest unit test list |
@@ -80,7 +82,8 @@ merch-vendor-integration-agent/
 │       └── scripts/
 │           ├── build_review.py            # decision + workbook + REPORT.md
 │           ├── scan_secrets.py            # finds leaked credentials (redacted)
-│           └── build_tech_pack.py         # tech.json → vendor config draft + Postman collection
+│           ├── build_tech_pack.py         # tech.json → vendor config draft + Postman collection
+│           └── lint_tech_spec.py          # quality gate for TECH_SPEC.md
 ├── docs/  DECISION.md  ARCHITECTURE.md  GAP_ANALYSIS.md  TEST_CATALOG.md
 ├── examples/printstop/                    # full example review + tech/ pack
 ├── tests/                                 # automated tests (CI)

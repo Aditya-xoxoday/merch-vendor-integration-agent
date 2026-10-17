@@ -14,7 +14,7 @@ tech.json shape (see examples/printstop/tech/tech.json):
     {
       "vendor":  {"className": "Printstop", "model": "printstop_merchandise", "vendorId": "<vendorId>",
                   "vendorType": "fixedSku", "async": true, "sandboxBaseUrl": "https://sandbox.example"},
-      "credentials": {"clientId": "{{client_id}}", ...},          # placeholders ONLY
+      "credentials": {"<tokenKey>": {"clientId": "{{client_id}}", ...}},  # placeholders ONLY; one key per token
       "token":   {"method": "GET", "path": "...", "query": {...}, "headers": {...},
                   "tokenField": "access_token"} | null,
       "headers": {"Authorization": "Bearer {{access_token}}", ...},  # business-call headers
@@ -45,11 +45,27 @@ VAR = re.compile(r"\{\{(?:int:)?([a-z0-9_]+)\}\}", re.I)
 INT_VAR = re.compile(r'"\{\{int:([a-z0-9_]+)\}\}"', re.I)
 
 
+def _leaves(obj, prefix):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _leaves(v, f"{prefix}.{k}")
+    else:
+        yield prefix, obj
+
+
 def validate(t):
     errors = []
-    for k, v in t.get("credentials", {}).items():
+    creds = t.get("credentials", {})
+    for path, v in _leaves(creds, "credentials"):
         if not PLACEHOLDER.match(str(v)):
-            errors.append(f"credentials.{k} must be a placeholder like {{{{{k.lower()}}}}}, never a real value")
+            errors.append(f"{path} must be a placeholder like {{{{name}}}}, never a real value")
+    if t.get("token"):
+        # /vendor/updateAccessToken calls fetchAccessToken once PER KEY of configs.credentials,
+        # so a token vendor needs exactly one key per token, each holding an object of fields.
+        bad = [k for k, v in creds.items() if not isinstance(v, dict)]
+        if bad:
+            errors.append(f"token vendor: credentials must be {{<tokenKey>: {{fields}}}}; flat keys {bad} would each "
+                          "trigger a separate fetchAccessToken call")
     for s, target in t.get("status_map", {}).items():
         if target not in DELIVERY_STATUSES:
             errors.append(f"status_map '{s}' -> '{target}' must be one of {DELIVERY_STATUSES}")

@@ -18,21 +18,23 @@ Detail is in `TECH_SPEC.md`; config draft in `vendor_config.draft.json`; Postman
 ## Batch 2/7: Authentication
 1. JWT via `GET /services/api.php?method=generate_token&corporate_id=…`, headers `client-secret`, `client-id`, `user-name`. Token in `access_token`. TTL UNKNOWN (AUTH-02).
 2. Custom headers on every call: `client-secret`, `client-id` (plus `user-name` on the token call), all into `vendorCallLogger.mongo.redactHeaders`.
+   Credentials go under **one key** (`credentials.printstop.{clientId, clientSecret, userName, corporateId, companyName, corporateBillingId, orderEmail}`), because updateAccessToken calls `fetchAccessToken` once per key. tokenType `printstop`.
 3. Expired token: 401.
 
 ## Batch 3/7: Order placement and shipping
 1. `POST /services/api.php?method=order`; body `profile`, `product`, `shipping` (or `corporate_shipping_id`), `corporate_billing_id` or `billing`; `template` for personalised products.
 2. Address: address_line_1/2, city, state (name), pincode (string), country (numeric, 99 = India). Max lengths and phone format UNKNOWN (ORD-06, ORD-07).
+   **The shipping block has no name or phone.** Recipient name/phone go in `profile`. profile.email = our constant `orderEmail` (TECH_SPEC §5.2 Model A), pending Q3.
 3. Vendor order id: `orders_id`.
 4. Async: returns `orders_id`, then statuses via Track Order (In Production …) → `iswebhookConfiration: true`.
-5. Idempotency: `reference_number` (optional, not echoed). Duplicate → HTTP 409 `{orders:[ids]}` **only on one-order-per-user stores**. Risk of a false match: TECH_SPEC §6.1.
+5. Idempotency: `reference_number` (optional, not echoed, not searchable). Duplicate → HTTP 409 `{orders:[ids]}`, keyed on the **user**. Never auto-link via callVendorRefetch (false match, TECH_SPEC §11.2); a timeout goes to manual review (§11.1).
 6. Errors: 400, 401, 409, 500; shape `{success:false, status, message, orders?}`; `success` is the string "true" on success.
 7. Pre-confirmation failure: UNKNOWN (ORD-13).
 
 ## Batch 4/7: Status tracking
 1. Polling only (no webhooks).
 2. n/a (no webhooks).
-3. Status values: only `In Production` (id 10) documented. Full list UNKNOWN (STS-01). Map so far: `"in production": "CONFIRMED"`.
+3. Status values: only `In Production` (id 10) documented. Full list UNKNOWN (STS-01). Map so far: `"in production": "CONFIRMED"`. RETURNED is not terminal for polling; verify the suspected email re-send bug (MC ~:1040) because this vendor is polling-only.
 4. Polling: `POST /services/api.php?method=order_status&orders_id=<api_order_id>`; status field `orders_status` (matches the base `res["orders_status"]`); tracking `tracking_number`, `tracking_url`, `shipping_company`; dates `orders_due_date`, `actual_delivery_date` (format "17 Jul, 2024").
 
 ## Batch 5/7: Catalog

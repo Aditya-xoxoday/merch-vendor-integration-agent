@@ -29,6 +29,8 @@ references with the **same email** (checks the §6.1 risk), and ask Printstop to
 to dispatched so tracking fields fill in (ENV-03). Save redacted responses over `fixtures/`.
 
 ## Step 2: Unit tests (Jest, vendor-integrations)
+A ready skeleton is in `code/Printstop.test.ts` (16 tests). It covers the rows below, including the
+409 never-auto-link rule, sku without size, non-India rejection and partial-catalogue throws.
 File: `tests/vendors/printstop.*.test.ts`. Patterns: `tests/vendors/oglobalidr.webhookOrderStatusUpdate.test.ts`,
 `vendorMerchandiseClass.updateOrderProductStatus*.test.ts`. Mock first:
 ```ts
@@ -47,6 +49,9 @@ jest.mock("@utils/db");
 | 7 | `getPlaceOrderReqOptions` | full mapping; empty last name → first name; empty contact → recipientMobileNumber; sku without size → no `size_id`; non-India country → rejected; no credentials in the body or logs |
 | 8 | `getRefetchOrderReqOptions` | DB row → `orders_id=<api_order_id>`; only `externalOrderId` → clear error |
 | 9 | `getReqHeaders` | Bearer + client-id + client-secret present |
+| 10 | `fetchAccessToken` | reads `credentials.printstop`; called once (one credentials key) |
+| 11 | polling loop | one 4xx on order_status does not stop the other orders (F11; verify the base loop) |
+| 12 | status emails | a second poll with the same status sends no second email (F12 suspected base bug) |
 
 Report: sandbox `x/12 requests, y/z assertions`; unit `x/y`. Classify each failure as vendor
 behaviour, our bug, or a wrong test assumption.

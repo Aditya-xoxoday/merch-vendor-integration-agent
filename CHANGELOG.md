@@ -1,5 +1,37 @@
 # Changelog
 
+## 3.2.0 (2026-10-18)
+- **Fixed:** the vendor config draft put token credentials as flat keys. `/vendor/updateAccessToken`
+  calls `fetchAccessToken` once per key, so this would have fetched one token per field.
+  Credentials now nest under one key, and `build_tech_pack.py` rejects the flat shape.
+- **Elite TECH mode:**
+  - existing-connector check
+  - quirk hunt checklist
+  - walking orders through our code paths
+  - 4 independent reviewers in parallel (architecture, failure hunter, security and data, ops and money)
+  - assumption ledger
+  - a hard quality gate
+- `lint_tech_spec.py` checks for:
+  - all 21 sections
+  - 4 or more mermaid diagrams
+  - 12 or more failure modes
+  - 6 or more assumptions, each with how to verify it
+  - every open must-have and every risk mentioned
+  - no secrets
+- TECH_SPEC template rewritten (21 sections).
+- connector_reference.md adds:
+  - the credentials shape
+  - RETURNED is not terminal for polling
+  - the suspected email re-send bug
+  - `allowMerchandiseEmailClientIds`
+  - the Dpanda refetch caveat
+- Printstop pack rebuilt:
+  - 548-line spec
+  - recipient-as-profile finding (no name or phone in shipping)
+  - 409 false-match and ghost-order designs
+  - draft `code/Printstop.ts` and `code/Printstop.test.ts` (16 tests)
+  - updated handoff, test plan, runbook and vendor email
+
 ## 3.1.0 (2026-10-18)
 - Developer tech pack at merch-sensei depth, produced by every review (MODE: TECH). It contains:
   - TECH_SPEC (feasibility block, endpoints, class plan, order body mapping, config, risks)

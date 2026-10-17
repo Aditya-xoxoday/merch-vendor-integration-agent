@@ -62,9 +62,10 @@ our side first.
    python3 scripts/build_review.py references/test_cases.json answers.json Vendor_Review.xlsx --md REPORT.md
    ```
 7. Write ANALYSIS.md, the vendor email, the Jira comment and a summary from `references/templates/`.
-8. Write the developer tech pack (`tech/`) at merch-sensei depth, using `references/connector_reference.md`:
+8. Write the developer tech pack (`tech/`) at elite depth (see MODE: TECH in the agent), using `references/connector_reference.md`:
    `tech.json` → `python3 scripts/build_tech_pack.py tech.json tech/` (vendor config draft + Postman
-   collection), plus TECH_SPEC.md, TEST_PLAN.md, DEBUG_RUNBOOK.md, HANDOFF_MERCH_SENSEI.md and fixtures.
+   collection), plus TECH_SPEC.md (21 sections), draft `code/` (class + Jest), TEST_PLAN.md, DEBUG_RUNBOOK.md,
+   HANDOFF_MERCH_SENSEI.md and fixtures. Gate: `python3 scripts/lint_tech_spec.py tech/TECH_SPEC.md answers.json references/test_cases.json`.
 9. Before replying: scan your outputs for secrets and check that the numbers match everywhere.
 
 ## Files
@@ -78,3 +79,4 @@ our side first.
 - `scripts/build_review.py`: checks the answers, then builds the workbook and REPORT.md.
 - `scripts/scan_secrets.py`: finds credentials in docs and prints them redacted.
 - `scripts/build_tech_pack.py`: tech.json → vendor config draft, Postman collection, environment template.
+- `scripts/lint_tech_spec.py`: quality gate for TECH_SPEC.md (sections, diagrams, depth, open items, secrets).

@@ -22,8 +22,14 @@ def test_example_is_valid(tp):
 
 def test_real_credential_rejected(tp):
     t = copy.deepcopy(TECH)
-    t["credentials"]["clientSecret"] = "a1b2c3d4e5f6g7h8"
+    t["credentials"]["printstop"]["clientSecret"] = "a1b2c3d4e5f6g7h8"
     assert any("clientSecret" in e for e in tp.validate(t))
+
+
+def test_flat_credentials_rejected_for_token_vendor(tp):
+    t = copy.deepcopy(TECH)
+    t["credentials"] = {"clientId": "{{client_id}}", "clientSecret": "{{client_secret}}"}
+    assert any("fetchAccessToken" in e for e in tp.validate(t))
 
 
 def test_production_url_rejected(tp):

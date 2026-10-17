@@ -8,6 +8,8 @@ Could you share the full list of order statuses (orders_status_id and orders_sta
 
 For safe retries, will reference_number be unique for every store, so that a repeated reference is rejected with the existing order ID? Can Track Order also look up an order by reference_number? This lets us confirm an order after a timeout without placing it twice.
 
+Please also tell us how our store is set up: is there a limit on orders per user, an approval step, or a need to create each recipient as a user before ordering? We plan to place all orders under one account email, with the recipient's name and phone in the profile.
+
 On ordering, please confirm whether one order is always one item or whether there is a quantity field. Please also confirm how Product Details selects a product, since the document shows no product ID parameter.
 
 On the catalogue, could you share the exact price per product and size, the currency, and whether GST and shipping are included? Please also tell us how to page through the product list, how stock is shown, and the base URL for the {cdnurl} image placeholder.
