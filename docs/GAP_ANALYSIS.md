@@ -32,7 +32,7 @@
 | 9 | Order failing before confirmation, multi-package, polling field | ORD-13, TRK-04, POL-02 |
 | 10 | Gift card wording copied in | Reworded |
 | 11 | Duplicate questions | Merged |
-| 12 | Output was only a spreadsheet | ANALYSIS.md, REPORT.md, mapping, messages |
+| 12 | Spreadsheet had no clear answer or vendor-ready content | One workbook: Summary (decision), Vendor questions (with email), Tech, All checks |
 | 13 | A 0-100 score that punished missing extras | Decision from must-haves only |
 | 14 | No tests for the tools | Test suite and CI |
 

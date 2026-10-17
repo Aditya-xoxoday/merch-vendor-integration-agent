@@ -1,5 +1,19 @@
 # Changelog
 
+## 4.0.0 (2026-10-18)
+- **One output per review:** `<Vendor>_Review.xlsx` with 4 tabs:
+  - Summary: decision, must-haves, top questions, security, next steps, copy-paste summary
+  - Vendor questions: all questions and the email draft
+  - Tech: endpoints, mapping, status flow, failure modes, assumptions, config, build notes
+  - All checks
+- It is built from a single `review.json`. This replaces the 9 separate files: ANALYSIS, REPORT,
+  inventory, mapping, email, Jira, summary, handoff, test plan and runbook.
+- Full tech spec, Postman, config draft and draft code are made only on request. The tech spec is
+  one file and now includes the test plan, merch-sensei handoff and debug runbook.
+- `must_have_notes` gives short, plain lines on the Summary tab.
+- Added `CLAUDE.md` so the agent works for anyone who clones the repo. Simpler README with a quick start.
+- Removed unused templates; Printstop example reduced to review.json, the workbook and the optional spec.
+
 ## 3.2.0 (2026-10-18)
 - **Fixed:** the vendor config draft put token credentials as flat keys. `/vendor/updateAccessToken`
   calls `fetchAccessToken` once per key, so this would have fetched one token per field.

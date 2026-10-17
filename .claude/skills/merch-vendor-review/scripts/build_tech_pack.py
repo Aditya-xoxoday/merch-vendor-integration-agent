@@ -10,7 +10,7 @@ Writes to <out_dir>:
     <ClassName>.postman_collection.json           Postman v2.1, every endpoint + negative cases, with tests
     <ClassName>.postman_environment.template.json placeholders only; copy outside the repo and fill in
 
-tech.json shape (see examples/printstop/tech/tech.json):
+tech.json shape (see tests/fixtures/printstop_tech.json):
     {
       "vendor":  {"className": "Printstop", "model": "printstop_merchandise", "vendorId": "<vendorId>",
                   "vendorType": "fixedSku", "async": true, "sandboxBaseUrl": "https://sandbox.example"},

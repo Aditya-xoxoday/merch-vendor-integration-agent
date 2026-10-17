@@ -1,17 +1,47 @@
 # Merchandise Vendor Integration Agent
 
-Give it a merchandise vendor's API document (PDF, Word, Postman, OpenAPI/Swagger, docs site or
-screenshots) and it answers two questions:
+Share a merchandise vendor's API document with this agent (PDF, Word, Postman, OpenAPI/Swagger,
+docs site or screenshots). You get back **one Excel workbook** that answers:
 
 1. **Can we integrate?** Yes / Yes on paper / Likely yes / No, decided only by 7 must-haves.
 2. **Does the API work?** Based on tests on the vendor's sandbox.
 
-Anything else that is missing (balance API, settlement report, rate limits...) is listed as a gap
-with a question for the vendor. Those gaps never block on their own. **No Place Order API means
-No. No balance API is fine.**
+**No Place Order API means No. No balance API is fine.** Everything that is missing but not a
+must-have is listed as a gap, with a question for the vendor.
 
-This agent reviews vendors. [merch-sensei](https://github.com/abhishekkxoxo/merch-sensei)
-builds the connector once the answer is yes.
+This agent reviews vendors. [merch-sensei](https://github.com/abhishekkxoxo/merch-sensei) builds the
+connector once the answer is yes.
+
+## Quick start
+```bash
+git clone https://github.com/Aditya-xoxoday/merch-vendor-integration-agent.git
+cd merch-vendor-integration-agent
+pip install -r requirements-dev.txt
+claude
+```
+Then in Claude Code:
+```
+/merch-vendor-agent
+```
+Share the vendor doc (file path or link). The workbook appears in `reviews/<vendor>/`.
+
+## The output: one workbook, 4 tabs
+| Tab | What's in it |
+|---|---|
+| **Summary** | The decision, the 7 must-haves (met / open / missing), top vendor questions, security, next steps, and a short summary to paste into Jira or Slack |
+| **Vendor questions** | Every question (must-haves first), other gaps, and a ready email draft |
+| **Tech** | Endpoints, order field mapping, status flow, failure modes, assumptions to verify, config changes, build notes |
+| **All checks** | All 130 checks with the answer, evidence and sandbox result |
+
+See [examples/printstop/Printstop_Review.xlsx](examples/printstop/Printstop_Review.xlsx).
+
+**Only when you ask:**
+| Say | You get |
+|---|---|
+| "full tech spec" | One `<Vendor>_TECH_SPEC.md` for developers: diagrams, class plan, failure modes, test plan, merch-sensei handoff, debug runbook ([example](examples/printstop/Printstop_TECH_SPEC.md)) |
+| "postman" / "config draft" / "draft code" | Build files for the sandbox run and the connector |
+| "run live" (with sandbox credentials) | Sandbox results added to the same workbook |
+| a new version of a doc | What changed, with the workbook updated |
 
 ## The 7 must-haves
 | # | Must-have |
@@ -24,99 +54,28 @@ builds the connector once the answer is yes.
 | 6 | Retry safely without creating duplicate orders |
 | 7 | Secure login that works |
 
-See [docs/DECISION.md](docs/DECISION.md) for exactly how the result is worked out.
+How the decision is worked out: [docs/DECISION.md](docs/DECISION.md). All 130 checks: [docs/TEST_CATALOG.md](docs/TEST_CATALOG.md).
 
-## Modes
-| Mode | Say | You get |
-|---|---|---|
-| **ANALYZE** (default) | share a doc and say "analyze" | Full review pack |
-| **LIVE** | "run live" with sandbox credentials | Sandbox test results added |
-| **COMMS** | "vendor email", "jira comment", "summary" | Ready-to-send messages |
-| **TECH** | always, or "tech pack" | Developer pack: 21-section spec, draft code, Postman, tests, runbook |
-| **HANDOFF** | "hand off" (when the answer is yes) | Build brief for merch-sensei |
-| **DIFF** | a new version of a reviewed doc | What changed, new decision |
-
-## What a review produces
-| File | Contents |
-|---|---|
-| `ANALYSIS.md` | Decision, must-haves, what we need from the vendor, other gaps, build notes, next steps |
-| `REPORT.md` | The same decision plus every gap and coverage by area |
-| `<Vendor>_Review.xlsx` | Summary sheet, and a Checks sheet with all 130 checks, evidence and sandbox results |
-| `00_doc_inventory.md` | Every source, endpoint, image and hidden hint |
-| `01_field_mapping.md` | Vendor fields mapped to our order and product fields |
-| `VENDOR_EMAIL.md`, `JIRA_COMMENT.md`, `SUMMARY.md` | Short, plain messages |
-
-**Developer tech pack (`tech/`):** built with independent reviewers (architecture, failure
-hunting, security and data, ops and money), checked by `lint_tech_spec.py` before it ships.
-
-| File | Contents |
-|---|---|
-| `TECH_SPEC.md` | 21 sections: summary, existing-connector check, feasibility, 4 sequence diagrams, endpoint contracts with types, data mapping, state machine, class plan, config across every repo, data model, failure modes (12+), idempotency, security and PII, performance, observability, tests, rollout and rollback, effort, assumption ledger, open questions, done means |
-| `code/<Vendor>.ts`, `code/<Vendor>.test.ts` | Draft connector class and Jest tests (syntax-checked; `VERIFY` marks where the base code must be confirmed) |
-| `vendor_config.draft.json` | `vendorConfigs` draft in merch-sensei shape (placeholder credentials) |
-| `<Vendor>.postman_collection.json` + env template | Every endpoint plus negative cases with assertions, ready for `postman collection run` on sandbox |
-| `TEST_PLAN.md` | Sandbox contract tests plus the Jest unit test list |
-| `DEBUG_RUNBOOK.md` | Wiring checks, symptom → cause table, SQL |
-| `HANDOFF_MERCH_SENSEI.md` | merch-sensei Batch 1-7 answers, pre-filled |
-| `fixtures/` | Example responses (PII removed) for unit tests |
-
-Example: [examples/printstop/ANALYSIS.md](examples/printstop/ANALYSIS.md) and its tech pack
-[examples/printstop/tech/TECH_SPEC.md](examples/printstop/tech/TECH_SPEC.md).
+## Rules the agent follows
+- Evidence or nothing: if the docs say nothing, the answer is "Not available". Nothing is guessed.
+- Sandbox only. Production is never called.
+- Secrets are never copied, and vendor docs and outputs stay out of git ([SECURITY.md](SECURITY.md)).
 
 ## Repository layout
 ```
-merch-vendor-integration-agent/
-├── .claude/
-│   ├── commands/merch-vendor-agent.md     # the agent
-│   └── skills/merch-vendor-review/        # the skill (also works on claude.ai)
-│       ├── SKILL.md
-│       ├── references/
-│       │   ├── test_cases.json            # 130 checks + 7 must-have groups
-│       │   ├── platform_contract.md       # what our system needs, and why
-│       │   ├── connector_reference.md     # build depth: lifecycle, class contract, config, debug
-│       │   ├── doc_intake.md              # how to read each doc type; synonyms
-│       │   ├── platform_playbooks.md      # Magento / Shopify / WooCommerce questions
-│       │   ├── xoxoday_api.md
-│       │   ├── example_answers.json
-│       │   └── templates/                 # analysis, tech spec, vendor email, Jira, summary
-│       └── scripts/
-│           ├── build_review.py            # decision + workbook + REPORT.md
-│           ├── scan_secrets.py            # finds leaked credentials (redacted)
-│           ├── build_tech_pack.py         # tech.json → vendor config draft + Postman collection
-│           └── lint_tech_spec.py          # quality gate for TECH_SPEC.md
-├── docs/  DECISION.md  ARCHITECTURE.md  GAP_ANALYSIS.md  TEST_CATALOG.md
-├── examples/printstop/                    # full example review + tech/ pack
-├── tests/                                 # automated tests (CI)
-├── tools/gen_test_catalog.py
-├── .github/workflows/ci.yml
-├── SECURITY.md  CONTRIBUTING.md  CHANGELOG.md  requirements-dev.txt
-└── reviews/                               # your work (gitignored)
+.claude/commands/merch-vendor-agent.md   the agent
+.claude/skills/merch-vendor-review/      the skill (also works when uploaded to claude.ai)
+  references/                            checks, platform contract, reading guides, spec template
+  scripts/                               build_review.py (the workbook), scan_secrets.py,
+                                         lint_tech_spec.py, build_tech_pack.py
+docs/                                    decision rules, architecture, gap analysis, check list
+examples/printstop/                      review.json, the workbook, and an optional full tech spec
+tests/                                   automated tests (run in CI)
+reviews/                                 your reviews (gitignored)
 ```
 
-## The checks
-130 checks in 16 areas: 14 must-have, 89 important and 27 nice-to-have. The areas are:
-documentation, login, environments, catalogue, pricing and balance, order placement, duplicates,
-order status, webhooks, polling, tracking, returns, reconciliation, errors and limits, security,
-and support. Full list: [docs/TEST_CATALOG.md](docs/TEST_CATALOG.md).
+## Use on claude.ai
+Zip `.claude/skills/merch-vendor-review/` and upload it as a skill.
 
-## Install
-**Claude Code:** clone this repo (or copy `.claude/` into your project) and run
-`/merch-vendor-agent`.
-
-**claude.ai:** zip `.claude/skills/merch-vendor-review/` and upload it as a skill.
-
-**Tests:**
-```bash
-pip install -r requirements-dev.txt
-pytest -q tests
-```
-
-## Rules
-- Evidence or nothing: if the docs say nothing, the answer is "Not available". Nothing is guessed.
-- Sandbox only. Production is never called.
-- Secrets are never copied, and vendor docs never go into git ([SECURITY.md](SECURITY.md)).
-
-## Related
-[merch-sensei](https://github.com/abhishekkxoxo/merch-sensei) ·
-[akatsuki-gift-cards](https://github.com/abhishekkxoxo/akatsuki-gift-cards) ·
-[topup-sensei](https://github.com/abhishekkxoxo/topup-sensei)
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md). Run `pytest -q tests` before you push.

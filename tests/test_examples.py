@@ -5,8 +5,8 @@ import pathlib
 from conftest import ROOT, SKILL
 
 
-def test_example_answers_validate(br, data):
-    for path in [SKILL / "references" / "example_answers.json", *ROOT.glob("examples/*/answers.json")]:
+def test_example_reviews_validate(br, data):
+    for path in [SKILL / "references" / "example_review.json", *ROOT.glob("examples/*/review.json")]:
         errors, _ = br.validate(data["tests"], json.loads(path.read_text()))
         assert not errors, (path, errors)
 

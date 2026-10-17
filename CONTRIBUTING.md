@@ -9,6 +9,7 @@
    - **Nice-to-have** otherwise
 3. Set `risk: true` only if a No/Open needs a change on our side before building.
 4. Run `python3 tools/gen_test_catalog.py`, then `pytest -q tests`.
+   If the example changes, rebuild it: `python3 .claude/skills/merch-vendor-review/scripts/build_review.py .claude/skills/merch-vendor-review/references/test_cases.json examples/printstop/review.json examples/printstop/Printstop_Review.xlsx`.
 5. Add a line to `CHANGELOG.md`.
 
 ## When our code changes

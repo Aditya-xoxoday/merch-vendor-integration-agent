@@ -1,0 +1,674 @@
+{
+ "vendor_name": "Printstop / Mandaala",
+ "reviewed_on": "2026-10-18",
+ "doc_sources": [
+  "https://deq64r0ss2hgl.cloudfront.net/images/printstop-api-docs.html (Printstop/Mandaala API Reference, single HTML page)"
+ ],
+ "answers": {
+  "DOC-01": {
+   "provided": "Open",
+   "details": "Covers login, catalogue, place order, duplicate handling and order tracking (with courier). No returns, settlement report or balance."
+  },
+  "DOC-02": {
+   "provided": "Open",
+   "details": "Full request/response examples for every endpoint; Product Details example is marked 'abridged'."
+  },
+  "DOC-03": {
+   "provided": "No",
+   "details": "orders_status_id / orders_status: only one example value (10, 'In Production'); the full list is not given."
+  },
+  "DOC-04": {
+   "provided": "Not available",
+   "details": "No date, version or owner on the page."
+  },
+  "AUTH-01": {
+   "provided": "Yes",
+   "details": "Authentication section: JWT via Firebase OAuth 2.0. Every call sends Authorization: Bearer <token> plus client-id and client-secret headers; curl examples given."
+  },
+  "AUTH-02": {
+   "provided": "Open",
+   "details": "GET method=generate_token&corporate_id=... with client-secret, client-id, user-name headers returns access_token. Token lifetime is not stated.",
+   "live": "Not run",
+   "live_notes": "No sandbox credentials yet."
+  },
+  "AUTH-03": {
+   "provided": "Yes",
+   "details": "Errors table: 401 when token, client-id or client-secret is missing, invalid or expired; 'Generate a fresh token and retry'.",
+   "live": "Not run",
+   "live_notes": "No sandbox credentials yet."
+  },
+  "AUTH-04": {
+   "live": "Not run",
+   "live_notes": "No sandbox credentials yet."
+  },
+  "AUTH-05": {
+   "provided": "NA",
+   "details": "No request signing."
+  },
+  "AUTH-07": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "ENV-01": {
+   "provided": "Yes",
+   "details": "Environments table: Sandbox https://www.psstaging.in; Production 'TBD (shared at go-live)'. Credentials shared separately.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ENV-03": {
+   "provided": "Not available",
+   "details": "No way to move a sandbox order through statuses is described."
+  },
+  "ENV-05": {
+   "provided": "Open",
+   "details": "Country is a numeric code; only 99 = India is listed. Prices shown in Rs. Other countries/currencies not stated."
+  },
+  "ENV-06": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "CAT-01": {
+   "provided": "Yes",
+   "details": "POST method=category_listing, method=product_listing, method=product_details.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "CAT-02": {
+   "provided": "Open",
+   "details": "Listings return 'total' and a data array; no page or limit parameters are documented.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "CAT-03": {
+   "provided": "Yes",
+   "details": "Place Order product.product_id is 'ID of the product to be ordered (from Catalog API)'; size_id from Product Details.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "CAT-04": {
+   "provided": "Open",
+   "details": "Product Details: product_name, product_long_des, product_images, category_id, visible. No exact price field, no currency field, no brand field."
+  },
+  "CAT-05": {
+   "provided": "Yes",
+   "details": "product_size array; pass size_id in Place Order. Personalisation templates give template_id and block names."
+  },
+  "CAT-06": {
+   "provided": "Not available",
+   "details": "No stock field or endpoint.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "CAT-11": {
+   "provided": "Open",
+   "details": "price_defining_method 'Range Based With Multiplication'; short description 'Ranging from Rs. 925 to Rs. 1075'. Exact price per size is not returned."
+  },
+  "CAT-12": {
+   "provided": "Yes",
+   "details": "category_id, product_long_des, product_features, HSN and tax details per product."
+  },
+  "CAT-14": {
+   "provided": "Open",
+   "details": "Some stores allow one order per user (see Duplicate Order Handling); create_user has numorders. No max quantity per product."
+  },
+  "CAT-16": {
+   "provided": "Yes",
+   "details": "Product Details field list names every attribute (images, descriptions, sizes, templates, taxes)."
+  },
+  "PRC-01": {
+   "provided": "Open",
+   "details": "Only a price range in HTML text; tax rates given separately (CGST/SGST/IGST). The amount we will be charged per order is not stated."
+  },
+  "PRC-02": {
+   "provided": "Open",
+   "details": "Prices shown as 'Rs.' in text; no currency code field."
+  },
+  "PRC-04": {
+   "provided": "Open",
+   "details": "GST rates and HSN per product are returned; shipping charges not mentioned."
+  },
+  "ORD-01": {
+   "provided": "Yes",
+   "details": "POST method=order with profile, product, template, shipping/billing objects; required/optional flags and types in tables; full example body.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ORD-02": {
+   "provided": "Yes",
+   "details": "Success response: {success, status: 200, orders_id: 6777648}.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ORD-03": {
+   "provided": "Yes",
+   "details": "Success response fully shown: success, status, orders_id."
+  },
+  "ORD-04": {
+   "provided": "Open",
+   "details": "Returns orders_id immediately, then statuses like 'In Production' via Track Order. Not stated whether the order is confirmed at placement."
+  },
+  "ORD-05": {
+   "provided": "Yes",
+   "details": "profile: first_name, last_name, email, mobile_number (+ company_name, corporate_id we can fill as constants); shipping: address_line_1, address_line_2, city, state, pincode, country. All derivable from our shipping fields."
+  },
+  "ORD-06": {
+   "provided": "Open",
+   "details": "Country = numeric code (99 India), state as name, pincode as string. Phone format not stated."
+  },
+  "ORD-07": {
+   "provided": "Not available",
+   "details": "No max lengths."
+  },
+  "ORD-08": {
+   "provided": "Open",
+   "details": "last_name and company_name marked Required; address_line_2 optionality not stated."
+  },
+  "ORD-09": {
+   "provided": "Open",
+   "details": "product is a single object with no quantity field: looks like one item per order. Needs confirmation."
+  },
+  "ORD-11": {
+   "provided": "Not available",
+   "details": "",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ORD-12": {
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ORD-13": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "ORD-14": {
+   "provided": "Not available",
+   "details": "No pincode check.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ORD-16": {
+   "provided": "Yes",
+   "details": "Personalisation template (name, employee number, image) per order."
+  },
+  "IDM-01": {
+   "provided": "Open",
+   "details": "profile.reference_number 'Unique reference number for the order', but Optional, and not returned by Track Order. Order lookup is only by orders_id."
+  },
+  "IDM-02": {
+   "provided": "Open",
+   "details": "Duplicate returns HTTP 409 with existing orders [ids], but only for 'one order per user' stores; not keyed on our reference_number.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "IDM-03": {
+   "provided": "Open",
+   "details": "Retry guidance: 'call Track Order, or rely on the 409'. Track Order needs orders_id, which we do not have after a timeout, so this only works on one-order-per-user stores."
+  },
+  "IDM-05": {
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "STS-01": {
+   "provided": "Open",
+   "details": "Track Order returns orders_status_id and orders_status, but only one example value is given (10, 'In Production'). Full list needed."
+  },
+  "STS-02": {
+   "provided": "Open",
+   "details": "Only 'In Production' can be mapped so far (to CONFIRMED)."
+  },
+  "STS-03": {
+   "provided": "Yes",
+   "details": "POST method=order_status&orders_id=... returns status, due date, delivery date and tracking fields.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "STS-05": {
+   "provided": "Not available",
+   "details": "Terminal statuses not defined; orders_due_date gives a committed date."
+  },
+  "STS-09": {
+   "provided": "Open",
+   "details": "Dates like '17 Jul, 2024' (orders_date_finished, orders_due_date, actual_delivery_date); timezone not stated."
+  },
+  "WHK-01": {
+   "provided": "Not available",
+   "details": "No webhooks described. Polling via Track Order is available instead."
+  },
+  "POL-01": {
+   "provided": "Yes",
+   "details": "Track Order (method=order_status) can be called on a schedule per order.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "POL-02": {
+   "provided": "Yes",
+   "details": "Status field is orders_status (plus orders_status_id), at the top level of the response."
+  },
+  "POL-03": {
+   "provided": "Open",
+   "details": "Single-order lookup only; no bulk status endpoint; allowed polling rate not stated."
+  },
+  "TRK-01": {
+   "provided": "Yes",
+   "details": "Track Order: tracking_number and shipping_company, blank until dispatched.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "TRK-02": {
+   "provided": "Yes",
+   "details": "Track Order: tracking_url."
+  },
+  "TRK-03": {
+   "provided": "Yes",
+   "details": "orders_due_date (committed due date); actual_delivery_date once delivered."
+  },
+  "TRK-05": {
+   "provided": "Open",
+   "details": "product_production_days per size; delivery days after dispatch not stated."
+  },
+  "TRK-06": {
+   "provided": "Open",
+   "details": "actual_delivery_date only; no proof of delivery."
+  },
+  "RTN-01": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "RTN-03": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "REC-01": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "REC-02": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "BAL-01": {
+   "provided": "Not available",
+   "details": "",
+   "live": "Not run",
+   "live_notes": "No endpoint."
+  },
+  "BAL-03": {
+   "provided": "Not available",
+   "details": "",
+   "live": "Not run",
+   "live_notes": "No endpoint."
+  },
+  "ERR-01": {
+   "provided": "Yes",
+   "details": "Errors table: 200, 400, 401, 409, 500 with meanings."
+  },
+  "ERR-02": {
+   "provided": "Open",
+   "details": "Error shape {success, status, message, orders}; success is the string \"true\" on success but boolean false on error.",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ERR-03": {
+   "provided": "Yes",
+   "details": "Uses standard HTTP status codes (400/401/409/500).",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "ERR-05": {
+   "provided": "Yes",
+   "details": "500: retry after some time. Order timeout: do not blindly retry; check Track Order or the 409 first."
+  },
+  "SEC-01": {
+   "provided": "Yes",
+   "details": "All URLs https://www.psstaging.in/...",
+   "live": "Not run",
+   "live_notes": "Not called."
+  },
+  "SEC-02": {
+   "provided": "Open",
+   "details": "create_user sends email, phone and address as URL query parameters; no data-handling policy stated."
+  },
+  "SEC-03": {
+   "provided": "Yes",
+   "details": "client-id, client-secret and token are sent as headers."
+  },
+  "SEC-05": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "SEC-07": {
+   "provided": "Yes",
+   "details": "Only placeholders ([Client Secret], [Client ID]); sample token is truncated; real values shared separately."
+  },
+  "SEC-08": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "SUP-01": {
+   "provided": "Not available",
+   "details": ""
+  },
+  "SUP-03": {
+   "provided": "Open",
+   "details": "Mentions 'feature flag or versioned behaviour' for the 401-to-409 change; no versioning or deprecation policy."
+  },
+  "SUP-05": {
+   "provided": "No",
+   "details": "Only an HTML page; no Postman collection or OpenAPI file linked."
+  }
+ },
+ "status_map": {
+  "in production": "CONFIRMED"
+ },
+ "security": "No credentials in the document (placeholders only; the sample token is cut off).",
+ "questions": [
+  {
+   "need": "Must-have",
+   "q": "Full list of order statuses (orders_status_id and orders_status) with meanings, including on hold, cancelled, dispatched, delivered and returned.",
+   "checks": "STS-01, STS-02"
+  },
+  {
+   "need": "Must-have",
+   "q": "Is reference_number unique per store, with a 409 returning the existing order on reuse? Can order_status look up an order by reference_number?",
+   "checks": "IDM-01, IDM-02, IDM-03"
+  },
+  {
+   "need": "Important",
+   "q": "How is our store set up: per-user order limit, approval step, or must each recipient exist as a user first? (Recipient name and phone go in the profile, which the duplicate rule checks.)",
+   "checks": "CAT-14, ORD-13"
+  },
+  {
+   "need": "Important",
+   "q": "Is one order always one item, or is there a quantity field?",
+   "checks": "ORD-09"
+  },
+  {
+   "need": "Important",
+   "q": "Exact price per product and size, currency, and whether GST and shipping are included.",
+   "checks": "PRC-01, PRC-02, PRC-04"
+  },
+  {
+   "need": "Important",
+   "q": "How does product_details select a product (no parameter documented)? What is the base URL for {cdnurl}?",
+   "checks": "CAT-04, DOC-02"
+  },
+  {
+   "need": "Important",
+   "q": "Paging for product_listing, stock or availability, token lifetime and rate limits.",
+   "checks": "CAT-02, CAT-06, AUTH-02, ERR-04"
+  },
+  {
+   "need": "Important",
+   "q": "Do recipients get emails or SMS from Printstop, and can they be turned off?",
+   "checks": "ORD-10"
+  },
+  {
+   "need": "Important",
+   "q": "Returns, replacement and return-to-origin process; settlement or invoice report.",
+   "checks": "RTN-03, RTN-04, REC-01"
+  },
+  {
+   "need": "Important",
+   "q": "Sandbox credentials, and confirmation that sandbox orders are not shipped or billed.",
+   "checks": "ENV-06"
+  }
+ ],
+ "vendor_email": "Subject: Printstop API integration: a few questions\n\nHi Printstop team,\n\nThank you for the API reference. We reviewed it for integration with our rewards platform. Ordering, tracking and the catalogue look good, and we have a few questions before we start.\n\nCould you share the full list of order statuses (orders_status_id and orders_status) with their meaning? We only see \"In Production\" in the document, and we need the rest, including cancelled, dispatched, delivered and returned.\n\nFor safe retries, will reference_number be unique for every store, so that a repeated reference is rejected with the existing order ID? Can Track Order also look up an order by reference_number? This lets us confirm an order after a timeout without placing it twice.\n\nPlease also tell us how our store is set up: is there a limit on orders per user, an approval step, or a need to create each recipient as a user before ordering? We plan to place all orders under one account email, with the recipient's name and phone in the profile.\n\nOn ordering, please confirm whether one order is always one item or whether there is a quantity field. Please also confirm how Product Details selects a product, since the document shows no product ID parameter.\n\nOn the catalogue, could you share the exact price per product and size, the currency, and whether GST and shipping are included? Please also tell us how to page through the product list, how stock is shown, and the base URL for the {cdnurl} image placeholder.\n\nIt would also help to know your returns and replacement process, whether a settlement or invoice report is available, your supported countries, and any rate limits.\n\nFinally, could you share sandbox credentials, and confirm that sandbox orders are not shipped or billed?\n\nRegards,\nAdi",
+ "next_steps": [
+  {
+   "step": "Check whether a Printstop connector already exists (karma has PRINTSTPMERCHANDISE_VENDOR_ID)",
+   "who": "Dev"
+  },
+  {
+   "step": "Send the vendor questions",
+   "who": "Us"
+  },
+  {
+   "step": "Get sandbox credentials and run the sandbox checks (LIVE mode)",
+   "who": "Printstop / Us"
+  },
+  {
+   "step": "Re-review with the answers (DIFF mode), then hand off to merch-sensei",
+   "who": "Us"
+  }
+ ],
+ "tech": {
+  "api_summary": "One endpoint, /services/api.php?method=<operation>, on sandbox https://www.psstaging.in (production shared at go-live). Login: GET generate_token returns a JWT; every call sends Authorization: Bearer plus client-id and client-secret headers. Place order returns orders_id; order_status gives status, due date, delivery date, courier, tracking number and URL. Catalogue: category_listing, product_listing (no paging), product_details (sizes, templates, GST). No webhooks, returns, settlement or balance API.",
+  "endpoints": [
+   {
+    "operation": "Token",
+    "call": "GET ?method=generate_token&corporate_id={id}",
+    "notes": "Headers client-secret, client-id, user-name. TTL not documented."
+   },
+   {
+    "operation": "Place order",
+    "call": "POST ?method=order",
+    "notes": "profile, product, shipping (or location code), billing code. 200 orders_id; 409 {orders:[ids]} keyed on user; 400/401/500."
+   },
+   {
+    "operation": "Track order",
+    "call": "POST ?method=order_status&orders_id={id}",
+    "notes": "orders_status (same field our polling reads), tracking_number, tracking_url, shipping_company, due and delivery dates."
+   },
+   {
+    "operation": "Products",
+    "call": "POST ?method=product_listing",
+    "notes": "total + data[product_id, name, status]. No paging."
+   },
+   {
+    "operation": "Product details",
+    "call": "POST ?method=product_details",
+    "notes": "Selector not documented (assume &product_id=). Sizes, templates, images, GST, HSN. No price."
+   },
+   {
+    "operation": "Categories",
+    "call": "POST ?method=category_listing",
+    "notes": "Category names for products."
+   },
+   {
+    "operation": "Create user",
+    "call": "POST ?method=create_user&...",
+    "notes": "All data in the URL query. Only needed if orders require an existing user."
+   }
+  ],
+  "order_mapping": [
+   {
+    "their_field": "profile.first_name / last_name",
+    "our_source": "shipping_firstname / shipping_lastname",
+    "rule": "Empty last name uses first name (required). Shipping has no name field, so profile is the recipient."
+   },
+   {
+    "their_field": "profile.mobile_number",
+    "our_source": "shipping_contact_no or recipientMobileNumber",
+    "rule": "Digits only, last 10 for India (assumption)."
+   },
+   {
+    "their_field": "profile.email",
+    "our_source": "Constant order email (Model A)",
+    "rule": "Pending Q3: per-user limits would reject repeat orders."
+   },
+   {
+    "their_field": "profile.company_name / corporate_id",
+    "our_source": "Config constants",
+    "rule": "Required."
+   },
+   {
+    "their_field": "profile.reference_number",
+    "our_source": "externalOrderId",
+    "rule": "Always sent; not echoed or searchable."
+   },
+   {
+    "their_field": "product.product_id / size_id",
+    "our_source": "sku \"{product_id}_{size_id}\"",
+    "rule": "Split; omit size_id when absent."
+   },
+   {
+    "their_field": "shipping.address_line_1 / 2, city, state, pincode",
+    "our_source": "shipping_address_1 / 2, shipping_city, shipping_zone, shipping_postcode",
+    "rule": "State as name; pincode as text."
+   },
+   {
+    "their_field": "shipping.country",
+    "our_source": "shipping country",
+    "rule": "99 = India; block other countries until confirmed."
+   },
+   {
+    "their_field": "corporate_billing_id",
+    "our_source": "Config constant",
+    "rule": "Location code."
+   }
+  ],
+  "status_flow": [
+   {
+    "their_status": "in production (10)",
+    "our_status": "CONFIRMED",
+    "effect": "Delivery record created; status email."
+   },
+   {
+    "their_status": "dispatched? (not documented)",
+    "our_status": "SHIPPED",
+    "effect": "Courier tracking saved; email."
+   },
+   {
+    "their_status": "delivered? (not documented)",
+    "our_status": "DELIVERED",
+    "effect": "Final; status checks stop."
+   },
+   {
+    "their_status": "cancelled / rejected? (not documented)",
+    "our_status": "CANCELED",
+    "effect": "Refund queued; status checks stop."
+   },
+   {
+    "their_status": "returned? (not documented)",
+    "our_status": "RETURNED",
+    "effect": "Email only, no refund; status checks continue (not terminal)."
+   },
+   {
+    "their_status": "anything else",
+    "our_status": "(unmapped)",
+    "effect": "Tracking only; logged as unmapped."
+   }
+  ],
+  "failure_modes": [
+   {
+    "failure": "Timeout or 5xx after Printstop created the order",
+    "handling": "No automatic retry (no lookup by reference); manual reconcile.",
+    "severity": "High"
+   },
+   {
+    "failure": "409 duplicate returns another reward's order (same user)",
+    "handling": "Never link automatically; manual review.",
+    "severity": "High"
+   },
+   {
+    "failure": "One status call fails",
+    "handling": "Must not stop status checks for all other orders.",
+    "severity": "High"
+   },
+   {
+    "failure": "Status email re-sent on every check (suspected base bug)",
+    "handling": "Verify before go-live; this vendor relies only on status checks.",
+    "severity": "High"
+   },
+   {
+    "failure": "Catalogue detail call fails mid-sync",
+    "handling": "Throw so the sync never wipes the catalogue with partial data.",
+    "severity": "High"
+   },
+   {
+    "failure": "Token expires or secret rotated",
+    "handling": "Refresh every 30 min until TTL is known; alert on refresh failure.",
+    "severity": "Medium"
+   },
+   {
+    "failure": "Unmapped status",
+    "handling": "Alert; add to status map.",
+    "severity": "Medium"
+   },
+   {
+    "failure": "Order stuck or returned, never final",
+    "handling": "Ageing alert past due date + 7 days.",
+    "severity": "Medium"
+   },
+   {
+    "failure": "Personalised product ordered without template",
+    "handling": "Disabled at sync.",
+    "severity": "Medium"
+   },
+   {
+    "failure": "Price differs from our stored amount",
+    "handling": "Keep karma amounts in sync; ask for a price field.",
+    "severity": "Medium"
+   }
+  ],
+  "assumptions": [
+   {
+    "assumption": "Token lasts about 1 hour (Firebase default)",
+    "verify": "Ask; decode exp in a sandbox token."
+   },
+   {
+    "assumption": "product_details takes &product_id=",
+    "verify": "Sandbox request."
+   },
+   {
+    "assumption": "Status list has dispatched, delivered, cancelled, returned equivalents",
+    "verify": "Vendor question 1."
+   },
+   {
+    "assumption": "Indian mobile numbers accepted as 10 digits",
+    "verify": "Sandbox orders with different formats."
+   },
+   {
+    "assumption": "Dates are IST; orders_date_finished is the order date",
+    "verify": "Ask Printstop."
+   },
+   {
+    "assumption": "Sandbox orders are not shipped or billed",
+    "verify": "Ask before the first sandbox order."
+   },
+   {
+    "assumption": "Our base code's polling loop stops on a thrown error",
+    "verify": "Read vendorMerchandiseClass on the branch."
+   }
+  ],
+  "config": [
+   {
+    "where": "VI vendorConfigs/Printstop.json",
+    "change": "merchandiseVendor true, iswebhookConfiration true, fixedSku + skuTable, token/refetch/listing blocks, credentials under one key \"printstop\"."
+   },
+   {
+    "where": "VI baseConfigs",
+    "change": "vendorClassIdMapping, merchandiseOrderTrackingVendorIds, redactHeaders (client-secret, client-id, user-name), allowMerchandiseEmailClientIds if Plum Pro."
+   },
+   {
+    "where": "OPMS",
+    "change": "integratedVendors += \"<id>\" (string)."
+   },
+   {
+    "where": "Schedulers",
+    "change": "Token refresh every 30 min, catalogue sync daily, status checks every 30-60 min."
+   },
+   {
+    "where": "DB / karma",
+    "change": "Check existing Printstop rows, tables and admin pages first; add only what is missing."
+   }
+  ],
+  "build_notes": [
+   "Check first: karma already defines PRINTSTPMERCHANDISE_VENDOR_ID, so a connector may exist.",
+   "Status checks need no override: their field is orders_status, which our polling already reads.",
+   "No webhooks: nothing to add in plumAuth. No balance API: no karma_reports module.",
+   "Full developer spec: Printstop_TECH_SPEC.md."
+  ]
+ },
+ "must_have_notes": {
+  "1": "POST method=order with documented fields returns orders_id.",
+  "2": "Name, email, mobile, address lines, city, state, pincode and country all map. Recipient name and phone go in the profile (shipping has no name).",
+  "3": "product_id from the catalogue (plus size_id from product details) is what the order takes.",
+  "4": "order_status returns status and tracking, and we can poll it. But only 1 status value is documented (In Production), so the rest cannot be mapped yet.",
+  "5": "tracking_number, tracking_url and shipping_company once dispatched.",
+  "6": "reference_number is optional, never returned and not searchable. The 409 duplicate works per user, not per reference. After a timeout we cannot check if the order exists.",
+  "7": "JWT token plus client-id and client-secret headers, HTTPS, with examples."
+ }
+}

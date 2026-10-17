@@ -12,7 +12,7 @@ Checks marked Sandbox also get a sandbox result: Pass / Fail / Not run.
 
 ## Must-haves (the only things that decide)
 There are 7 groups. A group is Met when all its checks are Met (and, where it says "any one of",
-at least one of those is Met). It is Missing if any required check is Missing.
+at least one of those is Met). It is Missing if any required check is Missing, or if any check in the group failed on sandbox (even an "any one of" alternative).
 
 1. Place an order and get an order ID back (ORD-01, ORD-02)
 2. Our address fields fit their order format (ORD-05)

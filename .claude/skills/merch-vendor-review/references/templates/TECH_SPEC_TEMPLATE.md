@@ -5,9 +5,9 @@
 | Source | {doc, date} |
 | Contract | `references/connector_reference.md` (code wins) |
 | Status | {docs reviewed / sandbox run x/y} |
-| Companion files | tech.json, vendor_config.draft.json, Postman collection, code/, TEST_PLAN, DEBUG_RUNBOOK, HANDOFF, fixtures |
+| Companion | `<Vendor>_Review.xlsx` (decision, questions, tech tables) |
 
-All 21 sections are required (`lint_tech_spec.py` checks them). Example: `examples/printstop/tech/TECH_SPEC.md`.
+All 21 sections are required (`lint_tech_spec.py` checks them). Sections 21 (merch-sensei handoff) and 22 (debug runbook) are expected too. Example: `examples/printstop/Printstop_TECH_SPEC.md`.
 
 ## 0. Summary
 Decision in one line, then the 3 design-level issues (table: issue, why it matters, check IDs).
@@ -60,7 +60,7 @@ Call volumes (order, polling, sync), rate limits, concurrency settings.
 Signal, source, alert.
 
 ## 15. Test strategy
-Sandbox (Postman) and unit (Jest) summary; link TEST_PLAN.
+Sandbox Postman table (request, asserts, closes) plus manual checks; Jest unit list.
 
 ## 16. Rollout and rollback
 Staging → UAT → limited prod → full; rollback steps.
@@ -76,3 +76,9 @@ Question, what it blocks, check IDs.
 
 ## 20. Done means
 Checklist.
+
+## 21. merch-sensei handoff
+Batch 1-7 answers (identity, auth, order, status, catalog, lifecycle, edge cases). Unknowns marked UNKNOWN with the check ID.
+
+## 22. Debug runbook
+Wiring sanity, symptom → cause → check table, SQL, output format.

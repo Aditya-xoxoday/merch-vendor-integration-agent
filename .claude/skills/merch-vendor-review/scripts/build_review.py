@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 """
-Build the merchandise vendor review: answers "can we integrate?" and "does the API work?".
+Build the ONE output of a review: a single workbook that answers "can we integrate?" and
+"does the API work?".
 
 Usage:
-    python3 build_review.py <test_cases.json> <answers.json> <output.xlsx> [--md <report.md>]
+    python3 build_review.py <test_cases.json> <review.json> <Vendor>_Review.xlsx [--md <report.md>]
 
-<answers.json>:
+Workbook tabs:
+    Summary           decision, must-haves, what we need from the vendor, security, next steps,
+                      and a short copy-paste summary for Jira/Slack
+    Vendor questions  numbered questions (must-haves first), other gaps, and the email draft
+    Tech              endpoints, order field mapping, status flow, failure modes, assumptions,
+                      config changes, build notes (only when review.json has "tech")
+    All checks        every check with answer, evidence and sandbox result
+
+<review.json>:
     {
       "vendor_name": "Example Vendor",
       "reviewed_on": "2026-10-18",
@@ -15,7 +24,22 @@ Usage:
                    "live": "Pass", "live_notes": "200, orders_id present"},
         "WHK-05": {"provided": "No", "details": "Signature header is mandatory"}
       },
-      "status_map": {"in production": "CONFIRMED", "dispatched": "SHIPPED"}
+      "status_map": {"in production": "CONFIRMED", "dispatched": "SHIPPED"},
+      "security": "No credentials found in the document.",                 # optional
+      "must_have_notes": {"1": "orders_id returned", "4": "Only 1 status documented"},  # optional, by must-have #
+      "questions": [{"q": "Full list of order statuses?", "need": "Must-have", "checks": "STS-01"}],  # optional
+      "vendor_email": "Subject: ...\n\nHi ...",                              # optional
+      "next_steps": [{"step": "Send questions", "who": "Us"}],             # optional
+      "tech": {                                                            # optional
+        "api_summary": "...",
+        "endpoints": [{"operation": "", "call": "", "notes": ""}],
+        "order_mapping": [{"their_field": "", "our_source": "", "rule": ""}],
+        "status_flow": [{"their_status": "", "our_status": "", "effect": ""}],
+        "failure_modes": [{"failure": "", "handling": "", "severity": ""}],
+        "assumptions": [{"assumption": "", "verify": ""}],
+        "config": [{"where": "", "change": ""}],
+        "build_notes": ["..."]
+      }
     }
 
     provided: Yes / No / Not available / NA / Open      (missing = "Not available")
@@ -95,6 +119,10 @@ def validate(tests, payload):
 
 # ---------- evaluation ----------
 
+def plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
 def evaluate(data, answers, status_map):
     tests = data["tests"]
     by_id = {t["id"]: t for t in tests}
@@ -126,15 +154,16 @@ def evaluate(data, answers, status_map):
         all_states = {tid: state(tid) for tid in g.get("all", [])}
         any_ids = g.get("any", [])
         any_states = {tid: state(tid) for tid in any_ids}
-        if "Missing" in all_states.values() or (any_ids and set(any_states.values()) == {"Missing"}):
-            s = "Missing"
+        failed = [tid for tid in list(all_states) + any_ids if live(tid) == "Fail"]
+        if failed or "Missing" in all_states.values() or (any_ids and set(any_states.values()) == {"Missing"}):
+            s = "Missing"  # a sandbox failure on any must-have check (even an alternative) blocks
         elif "Open" in all_states.values() or (any_ids and "Met" not in any_states.values()):
             s = "Open"
         else:
             s = "Met"
         ids = list(all_states) + any_ids
-        evidence = "; ".join(f"{tid}: {answers.get(tid, {}).get('details', '') or provided(tid)}"
-                             for tid in ids if provided(tid) != "Not available" or tid in all_states)
+        evidence = "\n".join(f"{tid}: {answers.get(tid, {}).get('details', '') or provided(tid)}"
+                              for tid in ids if provided(tid) != "Not available" or tid in all_states)
         must.append({"item": g["item"], "state": s, "ids": ids, "evidence": evidence})
 
     counts = {s: sum(m["state"] == s for m in must) for s in ("Met", "Open", "Missing")}
@@ -157,10 +186,10 @@ def evaluate(data, answers, status_map):
 
     if counts["Missing"]:
         decision = "No, we cannot integrate yet"
-        reason = f"{counts['Missing']} must-have(s) missing"
+        reason = f"{plural(counts['Missing'], 'must-have')} missing"
     elif counts["Open"]:
         decision = "Likely yes, after the vendor answers a few points"
-        reason = f"{counts['Open']} must-have(s) only partly documented"
+        reason = f"{plural(counts['Open'], 'must-have')} only partly documented"
     elif must_live_open:
         decision = "Yes on paper, confirm with a sandbox test"
         reason = "every must-have is documented; sandbox test still to run"
@@ -168,7 +197,7 @@ def evaluate(data, answers, status_map):
         decision = "Yes, we can integrate"
         reason = "every must-have is documented and passed on sandbox"
     if escalations and not counts["Missing"]:
-        reason += f"; {len(escalations)} item(s) need a change on our side first"
+        reason += f"; {plural(len(escalations), 'item')} need a change on our side first"
 
     def gaps(need):
         return [t for t in tests if t["need"] == need and state(t["id"]) != "Met"]
@@ -184,22 +213,216 @@ def evaluate(data, answers, status_map):
 
 # ---------- workbook ----------
 
-def header(ws, row, labels):
-    for c, label in enumerate(labels, 1):
-        cell = ws.cell(row=row, column=c, value=label)
+TECH_SECTIONS = [  # key, title, [(field, column label, width)]
+    ("endpoints", "Endpoints", [("operation", "Operation"), ("call", "Call"), ("notes", "Notes")]),
+    ("order_mapping", "Order field mapping", [("their_field", "Their field"), ("our_source", "Our source"),
+                                              ("rule", "Rule")]),
+    ("status_flow", "Status flow", [("their_status", "Their status"), ("our_status", "Our status"),
+                                    ("effect", "What happens")]),
+    ("failure_modes", "Failure modes", [("failure", "Failure"), ("handling", "Handling"), ("severity", "Severity")]),
+    ("assumptions", "Assumptions to verify", [("assumption", "Assumption"), ("verify", "How to verify")]),
+    ("config", "Config changes", [("where", "Where"), ("change", "Change")]),
+]
+
+
+class Sheet:
+    """Small helper that writes clean, consistently styled blocks top to bottom."""
+
+    def __init__(self, ws, widths):
+        self.ws, self.row = ws, 1
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+        self.ncols = len(widths)
+        ws.sheet_view.showGridLines = False
+
+    def title(self, text, sub=None):
+        self.ws.cell(row=self.row, column=1, value=text).font = font(bold=True, size=15, color=NAVY)
+        self.row += 1
+        if sub:
+            self.ws.cell(row=self.row, column=1, value=sub).font = font(italic=True, color="595959")
+            self.row += 1
+
+    def heading(self, text):
+        self.row += 1
+        for c in range(1, self.ncols + 1):
+            cell = self.ws.cell(row=self.row, column=c, value=text if c == 1 else None)
+            cell.font = font(bold=True, color=WHITE)
+            cell.fill = PatternFill("solid", fgColor=NAVY)
+        self.row += 1
+
+    def table(self, labels, rows, fills=None):
+        for c, label in enumerate(labels, 1):
+            cell = self.ws.cell(row=self.row, column=c, value=label)
+            cell.font = font(bold=True)
+            cell.fill = PatternFill("solid", fgColor="D9E1F2")
+            cell.border = border()
+        self.row += 1
+        for i, values in enumerate(rows):
+            for c, v in enumerate(values, 1):
+                cell = self.ws.cell(row=self.row, column=c, value=v)
+                cell.font = font()
+                cell.alignment = Alignment(wrap_text=True, vertical="top", horizontal="left")
+                cell.border = border()
+                if i % 2:
+                    cell.fill = PatternFill("solid", fgColor=GREY)
+            if fills and fills[i]:
+                cell = self.ws.cell(row=self.row, column=1)
+                cell.fill = PatternFill("solid", fgColor=fills[i])
+                cell.font = font(bold=True)
+            self.row += 1
+
+    def pair(self, label, value, fill=None):
+        a = self.ws.cell(row=self.row, column=1, value=label)
+        a.font = font(bold=True)
+        a.alignment = Alignment(vertical="top")
+        b = self.ws.cell(row=self.row, column=2, value=value)
+        b.font = font(bold=True)
+        b.alignment = Alignment(wrap_text=True, vertical="top")
+        if self.ncols > 2:
+            self.ws.merge_cells(start_row=self.row, start_column=2, end_row=self.row, end_column=self.ncols)
+        if fill:
+            b.fill = PatternFill("solid", fgColor=fill)
+        self.row += 1
+
+    def text(self, value, height=None):
+        cell = self.ws.cell(row=self.row, column=1, value=value)
+        cell.font = font()
+        cell.alignment = Alignment(wrap_text=True, vertical="top")
+        self.ws.merge_cells(start_row=self.row, start_column=1, end_row=self.row, end_column=self.ncols)
+        if height:
+            self.ws.row_dimensions[self.row].height = height
+        self.row += 1
+
+
+def vendor_questions(data, payload, ev):
+    """Questions from review.json, else generated from open/missing checks (must-haves first)."""
+    if payload.get("questions"):
+        return [(q.get("need", ""), q["q"], q.get("checks", "")) for q in payload["questions"]]
+    rows = []
+    for m in ev["must"]:
+        if m["state"] != "Met":
+            ids = [i for i in m["ids"] if ev["state"](i) != "Met"]
+            rows.append(("Must-have", m["item"], ", ".join(ids)))
+    for t in ev["gaps"]["Important"]:
+        rows.append(("Important", t["test"], t["id"]))
+    return rows
+
+
+def short_summary(payload, ev):
+    c = ev["counts"]
+    open_items = [m["item"] for m in ev["must"] if m["state"] != "Met"]
+    lines = [f"{payload.get('vendor_name', 'Vendor')}: {ev['decision']}.",
+             f"Must-haves: {c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])}).",
+             f"API test: {ev['api_works']}."]
+    if open_items:
+        lines.append("Open: " + "; ".join(open_items) + ".")
+    if payload.get("security"):
+        lines.append(f"Security: {payload['security']}")
+    steps = payload.get("next_steps") or []
+    if steps:
+        lines.append(f"Next: {steps[0]['step']}.")
+    return "\n".join(lines)
+
+
+def build_summary(wb, data, payload, ev):
+    ws = wb.active
+    ws.title = "Summary"
+    s = Sheet(ws, [22, 52, 70])
+    sub = " | ".join(x for x in [f"Reviewed {payload['reviewed_on']}" if payload.get("reviewed_on") else "",
+                                  *payload.get("doc_sources", [])] if x)
+    s.title(f"{payload.get('vendor_name', 'Vendor')}: merchandise API review", sub or None)
+    c = ev["counts"]
+    s.heading("Decision")
+    s.pair("Can we integrate?", f"{ev['decision']} ({ev['reason']})",
+           RED if c["Missing"] else AMBER if c["Open"] or ev["escalations"] else GREEN)
+    s.pair("Does the API work?", ev["api_works"],
+           RED if ev["live_fail"] else AMBER if not ev["api_works"].startswith("Works") else GREEN)
+    s.pair("Must-haves", f"{c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])})")
+    if payload.get("security"):
+        s.pair("Security", payload["security"])
+
+    s.heading("Must-haves")
+    notes = payload.get("must_have_notes", {})
+    s.table(["Status", "Must-have", "What we found"],
+            [(m["state"], m["item"], notes.get(str(i), m["evidence"])) for i, m in enumerate(ev["must"], 1)],
+            fills=[FILL[m["state"]] for m in ev["must"]])
+
+    if ev["escalations"]:
+        s.heading("Needs a change on our side first")
+        s.table(["Check", "Issue", "Evidence"],
+                [(t["id"], t["test"], payload["answers"].get(t["id"], {}).get("details", "")) for t in ev["escalations"]])
+
+    qs = vendor_questions(data, payload, ev)
+    if qs:
+        s.heading("What we need from the vendor (top 5; full list on 'Vendor questions')")
+        s.table(["Need", "Question", "Checks"], qs[:5])
+
+    steps = payload.get("next_steps") or []
+    if steps:
+        s.heading("Next steps")
+        s.table(["#", "Step", "Who"], [(i, x["step"], x.get("who", "")) for i, x in enumerate(steps, 1)])
+
+    s.heading("Short summary (copy for Jira / Slack)")
+    s.text(short_summary(payload, ev), height=95)
+    ws.freeze_panes = "A3"
+
+
+def build_questions(wb, data, payload, ev):
+    ws = wb.create_sheet("Vendor questions")
+    s = Sheet(ws, [6, 14, 80, 22])
+    s.title("Vendor questions", "Must-haves first. Important and nice-to-have gaps never block the integration.")
+    qs = vendor_questions(data, payload, ev)
+    s.heading("Questions to send")
+    s.table(["#", "Need", "Question", "Checks"], [(i, *q) for i, q in enumerate(qs, 1)])
+    for need in ("Important", "Nice-to-have"):
+        gaps = ev["gaps"][need]
+        if gaps:
+            s.heading(f"{need} gaps (do not block)")
+            s.table(["#", "Check", "Gap", "Answer"],
+                    [(i, t["id"], t["test"], ev["provided"](t["id"])) for i, t in enumerate(gaps, 1)])
+    if payload.get("vendor_email"):
+        s.heading("Email draft")
+        s.text(payload["vendor_email"], height=max(150, 15 * payload["vendor_email"].count("\n")))
+
+
+def build_tech(wb, payload):
+    tech = payload.get("tech")
+    if not tech:
+        return
+    ws = wb.create_sheet("Tech")
+    s = Sheet(ws, [34, 46, 64])
+    s.title("Tech", "Build-level detail for developers. Full spec (if produced): <Vendor>_TECH_SPEC.md")
+    if tech.get("api_summary"):
+        s.heading("What the API does")
+        s.text(tech["api_summary"], height=60)
+    sm = payload.get("status_map", {})
+    for key, title, cols in TECH_SECTIONS:
+        rows = tech.get(key) or []
+        if key == "status_flow" and not rows and sm:
+            rows = [{"their_status": k, "our_status": v, "effect": ""} for k, v in sm.items()]
+        if not rows:
+            continue
+        s.heading(title)
+        labels = [label for _, label in cols]
+        s.table(labels + [""] * (3 - len(labels)), [[r.get(f, "") for f, _ in cols] for r in rows])
+    if tech.get("build_notes"):
+        s.heading("Build notes")
+        for note in tech["build_notes"]:
+            s.text(f"- {note}")
+
+
+def build_checks(wb, data, answers, ev):
+    ws = wb.create_sheet("All checks")
+    cols = [("ID", 9), ("Area", 20), ("Need", 13), ("Checked by", 11), ("Check", 55),
+            ("What counts as yes", 38), ("Answer", 13), ("Evidence", 46), ("Sandbox", 11),
+            ("Sandbox notes", 30), ("Tech note", 40)]
+    for c, (label, w) in enumerate(cols, 1):
+        cell = ws.cell(row=1, column=c, value=label)
         cell.font = font(bold=True, color=WHITE)
         cell.fill = PatternFill("solid", fgColor=NAVY)
         cell.alignment = Alignment(vertical="center", wrap_text=True)
         cell.border = border()
-
-
-def build_checks_sheet(wb, data, answers, ev):
-    ws = wb.active
-    ws.title = "Checks"
-    cols = [("ID", 9), ("Area", 20), ("Need", 13), ("Checked by", 11), ("Check", 55),
-            ("What counts as yes", 38), ("Answer", 13), ("Evidence", 46), ("Sandbox", 11),
-            ("Sandbox notes", 32), ("Tech note", 42)]
-    header(ws, 1, [c[0] for c in cols])
+        ws.column_dimensions[get_column_letter(c)].width = w
     for i, t in enumerate(data["tests"]):
         a = answers.get(t["id"], {})
         p, lv = ev["provided"](t["id"]), ev["live"](t["id"])
@@ -215,90 +438,16 @@ def build_checks_sheet(wb, data, answers, ev):
         for c, v in ((7, p), (9, lv)):
             if v in FILL:
                 ws.cell(row=r, column=c).fill = PatternFill("solid", fgColor=FILL[v])
-    for i, (_, w) in enumerate(cols, 1):
-        ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{ws.max_row}"
     ws.sheet_view.showGridLines = False
 
 
-def build_summary_sheet(wb, data, answers, payload, ev):
-    ws = wb.create_sheet("Summary", 0)
-    row = [1]
-
-    def put(a, b=None, bold=False, fill=None):
-        ws.cell(row=row[0], column=1, value=a).font = font(bold=bold)
-        ws.cell(row=row[0], column=1).alignment = Alignment(wrap_text=True, vertical="top")
-        if b is not None:
-            cell = ws.cell(row=row[0], column=2, value=b)
-            cell.font = font(bold=bold)
-            cell.alignment = Alignment(wrap_text=True, vertical="top")
-            if fill:
-                cell.fill = PatternFill("solid", fgColor=fill)
-        row[0] += 1
-
-    def title(text):
-        row[0] += 1
-        for c in (1, 2):
-            cell = ws.cell(row=row[0], column=c, value=text if c == 1 else None)
-            cell.font = font(bold=True, color=WHITE)
-            cell.fill = PatternFill("solid", fgColor=NAVY)
-        row[0] += 1
-
-    ws.cell(row=1, column=1, value=f"{payload.get('vendor_name', 'Vendor')}: merchandise API review"
-            ).font = font(bold=True, size=14, color=NAVY)
-    row[0] = 2
-    if payload.get("reviewed_on"):
-        put("Reviewed on", payload["reviewed_on"])
-    for src in payload.get("doc_sources", []):
-        put("Source", src)
-
-    c = ev["counts"]
-    title("Decision")
-    put("Can we integrate?", f"{ev['decision']} ({ev['reason']})", True,
-        RED if c["Missing"] else AMBER if c["Open"] or ev["escalations"] else GREEN)
-    put("Does the API work?", ev["api_works"], True, RED if ev["live_fail"] else AMBER if "Not tested" in ev["api_works"] else GREEN)
-    put("Must-haves", f"{c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])})", True)
-    for n in ("Important", "Nice-to-have"):
-        have, total = ev["covered"][n]
-        put(f"{n} checks covered", f"{have} of {total}")
-
-    title("Must-haves")
-    for m in ev["must"]:
-        put(f"[{m['state'].upper()}] {m['item']}", m["evidence"], bold=m["state"] != "Met", fill=FILL[m["state"]])
-
-    if ev["escalations"]:
-        title("Needs a change on our side first")
-        for t in ev["escalations"]:
-            put(f"{t['id']} {t['test']}", answers.get(t["id"], {}).get("details", ""))
-
-    if ev["live_fail"]:
-        title("Failed on sandbox")
-        for t in ev["live_fail"]:
-            put(f"{t['id']} {t['test']}", answers.get(t["id"], {}).get("live_notes", ""), fill=RED)
-
-    title("Status mapping")
-    sm = payload.get("status_map", {})
-    if not sm:
-        put("No status list documented yet", "")
-    for k, v in sm.items():
-        put(k, v)
-
-    for n in ("Important", "Nice-to-have"):
-        title(f"{n} gaps (do not block)")
-        for t in ev["gaps"][n]:
-            put(f"{t['id']} {t['test']}", answers.get(t["id"], {}).get("details", "") or ev["provided"](t["id"]))
-
-    ws.column_dimensions["A"].width = 80
-    ws.column_dimensions["B"].width = 70
-    ws.sheet_view.showGridLines = False
-
-
-# ---------- markdown ----------
+# ---------- markdown (optional) ----------
 
 def build_markdown(data, answers, payload, ev):
-    def cell(s):
-        return str(s).replace("|", "\\|").replace("\n", " ")
+    def cell(v):
+        return str(v).replace("|", "\\|").replace("\n", " ")
 
     c = ev["counts"]
     out = [f"# {payload.get('vendor_name', 'Vendor')}: merchandise API review", ""]
@@ -306,37 +455,18 @@ def build_markdown(data, answers, payload, ev):
         out.append(f"Reviewed on: {payload['reviewed_on']}  ")
     for src in payload.get("doc_sources", []):
         out.append(f"Source: {src}  ")
-    out += ["", "## Decision", "",
-            f"**Can we integrate?** {ev['decision']} ({ev['reason']}).  ",
+    out += ["", "## Decision", "", f"**Can we integrate?** {ev['decision']} ({ev['reason']}).  ",
             f"**Does the API work?** {ev['api_works']}.  ",
-            f"**Must-haves:** {c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])}).  ",
-            "**Other checks covered:** " + ", ".join(
-                f"{n} {ev['covered'][n][0]} of {ev['covered'][n][1]}" for n in ("Important", "Nice-to-have")) + ".",
-            "", "## Must-haves", "", "| | Must-have | Evidence |", "|---|---|---|"]
+            f"**Must-haves:** {c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])})."]
+    if payload.get("security"):
+        out.append(f"  \n**Security:** {payload['security']}")
+    out += ["", "## Must-haves", "", "| Status | Must-have | What we found |", "|---|---|---|"]
     out += [f"| {m['state']} | {cell(m['item'])} | {cell(m['evidence'])} |" for m in ev["must"]]
-
-    def block(heading, rows):
-        nonlocal out
-        out += ["", f"## {heading}", ""] + (rows or ["None."])
-
-    if ev["escalations"]:
-        block("Needs a change on our side first",
-              [f"- **{t['id']}** {t['test']} ({answers.get(t['id'], {}).get('details', '')})" for t in ev["escalations"]])
-    if ev["live_fail"]:
-        block("Failed on sandbox", [f"- **{t['id']}** {answers.get(t['id'], {}).get('live_notes', '')}" for t in ev["live_fail"]])
-    sm = payload.get("status_map", {})
-    block("Status mapping", [f"- `{k}` -> {v}" for k, v in sm.items()] or ["No status list documented yet."])
-    for n in ("Important", "Nice-to-have"):
-        block(f"{n} gaps (do not block)",
-              [f"- **{t['id']}** {t['test']}" + (f" ({answers[t['id']]['details']})"
-                                                if answers.get(t['id'], {}).get('details') else "")
-               for t in ev["gaps"][n]])
-    out += ["", "## Coverage by area", "", "| Area | Yes | No | Open | Not available | NA |", "|---|---|---|---|---|---|"]
-    tests = data["tests"]
-    for s in dict.fromkeys(t["section"] for t in tests):
-        ts = [t for t in tests if t["section"] == s]
-        k = {v: sum(ev["provided"](t["id"]) == v for t in ts) for v in PROVIDED}
-        out.append(f"| {s} | {k['Yes']} | {k['No']} | {k['Open']} | {k['Not available']} | {k['NA']} |")
+    qs = vendor_questions(data, payload, ev)
+    out += ["", "## Vendor questions", ""] + [f"{i}. [{q[0]}] {q[1]} ({q[2]})" for i, q in enumerate(qs, 1)]
+    for need in ("Important", "Nice-to-have"):
+        out += ["", f"## {need} gaps (do not block)", ""]
+        out += [f"- **{t['id']}** {t['test']}" for t in ev["gaps"][need]] or ["None."]
     return "\n".join(out) + "\n"
 
 
@@ -350,11 +480,12 @@ def main():
     if len(args) < 3:
         print(__doc__)
         sys.exit(1)
-    tests_path, answers_path, out_path = args[:3]
+    tests_path, review_path, out_path = args[:3]
     with open(tests_path) as f:
         data = json.load(f)
-    with open(answers_path) as f:
+    with open(review_path) as f:
         payload = json.load(f)
+    payload.setdefault("answers", {})
     errors, warnings = validate(data["tests"], payload)
     for w in warnings:
         print(f"WARN  {w}")
@@ -362,11 +493,13 @@ def main():
         for e in errors:
             print(f"ERROR {e}")
         sys.exit(2)
-    answers = payload.get("answers", {})
+    answers = payload["answers"]
     ev = evaluate(data, answers, payload.get("status_map", {}))
     wb = Workbook()
-    build_checks_sheet(wb, data, answers, ev)
-    build_summary_sheet(wb, data, answers, payload, ev)
+    build_summary(wb, data, payload, ev)
+    build_questions(wb, data, payload, ev)
+    build_tech(wb, payload)
+    build_checks(wb, data, answers, ev)
     wb.save(out_path)
     print(f"Wrote {out_path}")
     if md_path:

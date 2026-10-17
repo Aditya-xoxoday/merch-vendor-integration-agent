@@ -5,7 +5,7 @@
 | Source | Printstop/Mandaala API Reference (HTML, reviewed 2026-10-18) |
 | Contract | `references/connector_reference.md` (merch-sensei, vendor-integrations `canvas`, Oct 2026) |
 | Status | Docs reviewed. Sandbox not run (no credentials). **Code wins over this file.** |
-| Companion files | `tech.json`, `vendor_config.draft.json`, `Printstop.postman_collection.json`, `code/`, `TEST_PLAN.md`, `DEBUG_RUNBOOK.md`, `HANDOFF_MERCH_SENSEI.md`, `fixtures/` |
+| Companion | `Printstop_Review.xlsx` (decision, questions, tech tables). This file is the full developer spec: build plan, test plan, merch-sensei handoff and debug runbook. |
 
 ---
 
@@ -331,7 +331,7 @@ Rows in `<…>` are expected but **not documented** (Q1). Two consequences:
 
 ## 7. Class plan: `src/vendors/integratedVendors/Printstop.ts`
 
-Draft code: `code/Printstop.ts` (verify signatures against the base classes first). Rules: extend
+Draft code is produced on request (TECH mode, "draft code"). Rules: extend
 `VendorMerchandiseClass`; `Helper.makeRequestWithAxios` only (raw axios skips call logging); `logger`,
 never `console`; `max-len 120`; `max-lines-per-function 120`; 2-space indent; `noUnusedLocals`.
 
@@ -471,10 +471,59 @@ Log every call with `method` (operation), orders_id and voucher_insert_id. Never
 
 ## 15. Test strategy
 
-`TEST_PLAN.md` has the details. Sandbox first: 12 Postman requests including duplicate, invalid
-product, missing address, expired token and unknown order, plus manual checks (latency, same-email
-second order, dispatch simulation). Then Jest: the `code/Printstop.test.ts` skeleton covers every
-formatter, mapping and error path, using `fixtures/`.
+Two steps, in order: prove the vendor behaves as documented, then prove our code handles what it returns.
+
+### Step 1: Sandbox contract tests (Postman CLI)
+Collection: generate on request with `build_tech_pack.py` (TECH mode).
+Environment: copy `Printstop.postman_environment.template.json` **outside the repo**, fill it in, then:
+```bash
+postman collection run Printstop.postman_collection.json -e /path/outside/repo/printstop.env.json
+```
+
+| # | Request | Asserts | Closes |
+|---|---|---|---|
+| 00 | Auth: get token | 200; `access_token` present (saved to `{{access_token}}`) | AUTH-02 |
+| 00 | Auth: bad secret | 401 | AUTH-04 |
+| 01 | Category listing | 200; `success`, `total`, `data` | CAT-01 |
+| 02 | Product listing | 200; `total` equals `data.length` (check manually); `product_id`, `name`, `status` | CAT-01, CAT-02 |
+| 03 | Product details | 200; `product_details.product_size[]`, `templates[]`. Confirms the undocumented `product_id` selector | CAT-03, CAT-05 |
+| 04 | Place order | 200; `orders_id` (saved to `{{orders_id}}`) | ORD-01, ORD-02 |
+| 04 | Same reference again | 409; `orders` contains the first id. **If it returns 200, there is no duplicate protection on our store** | IDM-02 |
+| 04 | Invalid product | 400 | ORD-12 |
+| 04 | Missing address | 400 | ORD-12 |
+| 04 | Expired token | 401 | AUTH-03 |
+| 05 | Track order | 200; all 8 fields present; `orders_status` is a string | STS-03, POL-02, TRK-01 |
+| 05 | Unknown order | 4xx, not 500 | STS-08 |
+
+Also do by hand: time the order call (ORD-11, must be ≤120 s), place two orders for two different
+references with the **same email** (checks the §6.1 risk), and ask Printstop to move the test order
+to dispatched so tracking fields fill in (ENV-03). Keep redacted responses for the unit tests.
+
+### Step 2: Unit tests (Jest, vendor-integrations)
+File: `tests/vendors/printstop.*.test.ts`. Patterns: `tests/vendors/oglobalidr.webhookOrderStatusUpdate.test.ts`,
+`vendorMerchandiseClass.updateOrderProductStatus*.test.ts`. Mock first:
+```ts
+jest.mock("@plum-xoxo/correlation-logger/logger", () => ({ logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } }));
+jest.mock("@utils/db");
+```
+
+| # | Unit | Cases |
+|---|---|---|
+| 1 | `formatOrderResponse` | `printstopOrder.json` → `code = printstop_merchandise_vendor_6777648`, `apiOrderId "6777648"`, `addedBy "Printstop API"`; no `orders_id` → throws |
+| 2 | `errorHandler` | `printstopOrderDuplicate.json` (409) → behaviour agreed in §6.1 (refetch only if reference-keyed, else fail); 401 → refresh path |
+| 3 | `formatWebhookOrderStatusResponse` | `printstopStatusInProduction.json` → status "In Production", apiOrderId, empty tracking; dispatched sample (after LIVE) → trackingId, link, courier_name; unknown status → returned raw, not thrown; missing `orders_id` → throws |
+| 4 | `webhookConfigs.orderStatus` | every value ∈ PENDING/CONFIRMED/SHIPPED/DELIVERED/CANCELED/RETURNED; keys lowercase; no ORDER_FAILED |
+| 5 | `formatProductResponse` | `printstopProductDetails.json` → sku `8093_14513`, status 1, brand `""`, `{cdnurl}` replaced; inactive size → status 0 |
+| 6 | `getVendorProducts` | listing `total` ≠ `data.length` → throws; a failing details call → throws |
+| 7 | `getPlaceOrderReqOptions` | full mapping; empty last name → first name; empty contact → recipientMobileNumber; sku without size → no `size_id`; non-India country → rejected; no credentials in the body or logs |
+| 8 | `getRefetchOrderReqOptions` | DB row → `orders_id=<api_order_id>`; only `externalOrderId` → clear error |
+| 9 | `getReqHeaders` | Bearer + client-id + client-secret present |
+| 10 | `fetchAccessToken` | reads `credentials.printstop`; called once (one credentials key) |
+| 11 | polling loop | one 4xx on order_status does not stop the other orders (F11; verify the base loop) |
+| 12 | status emails | a second poll with the same status sends no second email (F12 suspected base bug) |
+
+Report: sandbox `x/12 requests, y/z assertions`; unit `x/y`. Classify each failure as vendor
+behaviour, our bug, or a wrong test assumption.
 
 ---
 
@@ -546,3 +595,111 @@ Estimates assume answers to Q1-Q3 are in hand.
 - [ ] `git status` shows the vendor config not staged; no secrets in tracked files.
 - [ ] Staging smoke: mvod 1 → 2 → 3, courier_tracking row, email sent once (F12 checked).
 - [ ] Alerts in §14 configured; rollback steps rehearsed.
+
+---
+
+## 21. merch-sensei handoff
+
+Paste into `/merch-sensei` (ONBOARD) after `start`. UNKNOWN items list the check that closes them.
+Detail is in this spec.
+
+> First run `git grep -in printstop` in vendor-integrations, karma and order-process-ms. karma
+> already defines `PRINTSTPMERCHANDISE_VENDOR_ID`. If a connector exists, treat this as a change
+> to it.
+
+### Batch 1/7: Identity
+1. Class name `Printstop`; model `printstop_merchandise` (confirm against the existing karma/product model).
+2. Vendor id per env: UNKNOWN (reuse `PRINTSTPMERCHANDISE_VENDOR_ID` values). Check the central `vendor` and `vendor_to_model` rows exist.
+3. Countries/currencies: India only (country code 99); INR assumed from "Rs." text. UNKNOWN for others (ENV-05, PRC-02).
+4. Base URLs: staging `https://www.psstaging.in`; production UNKNOWN ("shared at go-live").
+5. `fixedSku`: no price in the API, so amounts are entered per sku in karma (Variant B).
+
+### Batch 2/7: Authentication
+1. JWT via `GET /services/api.php?method=generate_token&corporate_id=…`, headers `client-secret`, `client-id`, `user-name`. Token in `access_token`. TTL UNKNOWN (AUTH-02).
+2. Custom headers on every call: `client-secret`, `client-id` (plus `user-name` on the token call), all into `vendorCallLogger.mongo.redactHeaders`.
+   Credentials go under **one key** (`credentials.printstop.{clientId, clientSecret, userName, corporateId, companyName, corporateBillingId, orderEmail}`), because updateAccessToken calls `fetchAccessToken` once per key. tokenType `printstop`.
+3. Expired token: 401.
+
+### Batch 3/7: Order placement and shipping
+1. `POST /services/api.php?method=order`; body `profile`, `product`, `shipping` (or `corporate_shipping_id`), `corporate_billing_id` or `billing`; `template` for personalised products.
+2. Address: address_line_1/2, city, state (name), pincode (string), country (numeric, 99 = India). Max lengths and phone format UNKNOWN (ORD-06, ORD-07).
+   **The shipping block has no name or phone.** Recipient name/phone go in `profile`. profile.email = our constant `orderEmail` (§5.2 Model A), pending Q3.
+3. Vendor order id: `orders_id`.
+4. Async: returns `orders_id`, then statuses via Track Order (In Production …) → `iswebhookConfiration: true`.
+5. Idempotency: `reference_number` (optional, not echoed, not searchable). Duplicate → HTTP 409 `{orders:[ids]}`, keyed on the **user**. Never auto-link via callVendorRefetch (false match, §11.2); a timeout goes to manual review (§11.1).
+6. Errors: 400, 401, 409, 500; shape `{success:false, status, message, orders?}`; `success` is the string "true" on success.
+7. Pre-confirmation failure: UNKNOWN (ORD-13).
+
+### Batch 4/7: Status tracking
+1. Polling only (no webhooks).
+2. n/a (no webhooks).
+3. Status values: only `In Production` (id 10) documented. Full list UNKNOWN (STS-01). Map so far: `"in production": "CONFIRMED"`. RETURNED is not terminal for polling; verify the suspected email re-send bug (MC ~:1040) because this vendor is polling-only.
+4. Polling: `POST /services/api.php?method=order_status&orders_id=<api_order_id>`; status field `orders_status` (matches the base `res["orders_status"]`); tracking `tracking_number`, `tracking_url`, `shipping_company`; dates `orders_due_date`, `actual_delivery_date` (format "17 Jul, 2024").
+
+### Batch 5/7: Catalog
+1. `POST ?method=product_listing` → `{total, data:[{product_id, name, status}]}`; no paging documented (CAT-02).
+2. Fields (details): product_name, product_long_des, product_image (`{cdnurl}` prefix, base UNKNOWN), category_id, visible ("Active"). No price, currency or brand.
+3. Variants: `product_size[]` (`size_id`). Order needs `product_id` + `size_id`, so sku = `${product_id}_${size_id}`.
+4. Stock: none documented (CAT-06).
+5. Product webhooks: none, so `formatWebhookProductResponse` is a no-op.
+
+### Batch 6/7: Lifecycle
+1. Outbound cancel: none (platform has none anyway).
+2. Returns: not documented (RTN-03). RETURNED gives no refund on our side.
+3. Per-order tracking URL: yes (`tracking_url`).
+
+### Batch 7/7: Edge cases
+1. Rate limits: UNKNOWN (ERR-04).
+2. Webhook retries/duplicates: n/a.
+3. Staging quirks: single path with `?method=`; `product_details` selector undocumented; `success` string vs boolean; personalised templates.
+4. Prepaid balance endpoint: none, so no karma_reports module.
+
+---
+
+## 22. Debug runbook
+
+Never print credentials, tokens or recipient PII. Collect first: vendorId, order_id,
+order_product_id, api_order_id (= Printstop `orders_id`), environment, time window.
+
+### Wiring sanity
+- VI `vendorClassIdMapping."Printstop"` = vendorId (else `Unknown vendor ID`).
+- `config.json.vendorConfigs["<vendorId>"]` exists after `merge-configs`; `merchandiseVendor: true`.
+- OPMS `integratedVendors` has the id as a **string**.
+- vendorId in `merchandiseOrderTrackingVendorIds` (polling).
+- `tokens` row exists for the vendor (`SELECT vendor_id, token_type, date_modified FROM tokens WHERE vendor_id = :vid`, never `info`).
+
+### Symptoms
+| Symptom | Likely cause | Check |
+|---|---|---|
+| Every call 401 | token expired / scheduler not running / wrong user-name | `tokens.date_modified`; re-seed with `/vendor/updateAccessToken`; OPM00015 if no row |
+| 401 only on business calls | missing `client-id`/`client-secret` headers (needed besides Bearer) | `getReqHeaders`; Mongo `vendor_call_logs` (headers redacted) |
+| Order fails with 409 | duplicate for this user (one-order-per-user store) | response `orders[]`. **Do not auto-link** to that order unless the reference matches (§6.1) |
+| Order fails with 400 | missing required field (last_name, company_name, address) or bad product/size | request body in `vendor_call_logs` (apiType placeOrder) |
+| Order placed but "no code" error | `formatOrderResponse` saw no `orders_id` (e.g. `success:"true"` without id) | raw response in Mongo |
+| Timeout on place order | order may exist at Printstop, and we cannot look it up by reference | ask Printstop by reference_number / email; manual reconcile; never blind-retry |
+| Status stuck at 1 | unmapped `orders_status` value | log `Printstop: unmapped webhook status`; add the lowercase key to `webhookConfigs.orderStatus` |
+| Several token rows / token calls per refresh | credentials not nested under one key (fetchAccessToken runs per key) | vendor config `credentials` shape |
+| Same status email sent every poll | suspected base bug `order.order_Product_Id` casing (MC ~:1040) | compare email logs with poll runs; table DDL column name |
+| Every 2nd order gets 409 | one-order-per-user store with a constant profile email (Model A) | ask Printstop to lift the per-user limit (Q3) |
+| Returned orders still polled | RETURNED (10) is not terminal for the polling query | expected; raise a base change if volume matters |
+| Polling stops for all Printstop orders | one bad response aborts the loop; or the id is missing from `merchandiseOrderTrackingVendorIds` | `Error while Merchandise order tracking` / Teams card |
+| No tracking shown | not dispatched yet (fields blank until dispatch) or formatter mapping | order_status response: `tracking_number`, `tracking_url`, `shipping_company` |
+| Products all disabled after sync | partial catalogue fetch (details call failed silently) | `received N products` vs `Formatted N products`; the formatter must throw |
+| Product shows no image | `{cdnurl}` not replaced | formatProductResponse |
+
+### SQL
+```sql
+SELECT id, order_id, order_product_id, api_order_id, insert_id, status, date_updated
+  FROM merchandise_vendor_order_details WHERE vendor_id = :vid AND (order_id = :oid OR api_order_id = :api);
+SELECT egift_voucher_detail_id, order_id, api_order_id, added_by, status FROM egift_voucher_details WHERE api_order_id = :api;  -- added_by = 'Printstop API'
+SELECT * FROM courier_tracking WHERE order_id = :oid;
+SELECT comment, date_added FROM order_history WHERE order_id = :oid ORDER BY order_history_id DESC;
+```
+
+### Output
+```
+DIAGNOSIS: <one line>
+EVIDENCE: <log line / SQL row / file:line>
+LAYER: OPMS config | VI config | VI Printstop class | VI base (needs change) | DB seed | karma | Printstop side
+FIX: <file + change>, or "ask Printstop: <question>"
+```

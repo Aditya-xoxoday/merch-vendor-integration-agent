@@ -5,12 +5,12 @@ import sys
 
 from conftest import ROOT, SKILL, load_module
 
-SPEC = ROOT / "examples" / "printstop" / "tech" / "TECH_SPEC.md"
+SPEC = ROOT / "examples" / "printstop" / "Printstop_TECH_SPEC.md"
 
 
 def test_printstop_spec_passes(data):
     lt = load_module("lint_tech_spec")
-    answers = json.loads((ROOT / "examples" / "printstop" / "answers.json").read_text())
+    answers = json.loads((ROOT / "examples" / "printstop" / "review.json").read_text())
     assert lt.lint(SPEC.read_text(), answers, data) == []
 
 
@@ -23,7 +23,7 @@ def test_shallow_spec_fails():
 def test_open_must_have_must_be_mentioned(data):
     lt = load_module("lint_tech_spec")
     text = SPEC.read_text().replace("STS-01", "STS-XX")
-    answers = json.loads((ROOT / "examples" / "printstop" / "answers.json").read_text())
+    answers = json.loads((ROOT / "examples" / "printstop" / "review.json").read_text())
     assert any("STS-01" in p for p in lt.lint(text, answers, data))
 
 

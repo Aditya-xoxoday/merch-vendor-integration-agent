@@ -8,7 +8,7 @@ import pytest
 
 from conftest import ROOT, SKILL, load_module
 
-TECH = json.loads((ROOT / "examples" / "printstop" / "tech" / "tech.json").read_text())
+TECH = json.loads((ROOT / "tests" / "fixtures" / "printstop_tech.json").read_text())
 
 
 @pytest.fixture(scope="module")
@@ -65,7 +65,7 @@ def test_collection_covers_every_endpoint_and_negative(tp):
 
 def test_cli_writes_three_files(tmp_path):
     r = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_tech_pack.py"),
-                        str(ROOT / "examples" / "printstop" / "tech" / "tech.json"), str(tmp_path)],
+                        str(ROOT / "tests" / "fixtures" / "printstop_tech.json"), str(tmp_path)],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     names = {p.name for p in tmp_path.iterdir()}
@@ -73,11 +73,3 @@ def test_cli_writes_three_files(tmp_path):
                      "Printstop.postman_environment.template.json"}
     env = json.loads((tmp_path / "Printstop.postman_environment.template.json").read_text())
     assert all(v["value"].startswith(("<fill in", "https://")) for v in env["values"])
-
-
-def test_committed_tech_files_are_up_to_date(tp, tmp_path):
-    subprocess.run([sys.executable, str(SKILL / "scripts" / "build_tech_pack.py"),
-                    str(ROOT / "examples" / "printstop" / "tech" / "tech.json"), str(tmp_path)], check=True,
-                   capture_output=True)
-    for p in tmp_path.iterdir():
-        assert p.read_text() == (ROOT / "examples" / "printstop" / "tech" / p.name).read_text(), p.name

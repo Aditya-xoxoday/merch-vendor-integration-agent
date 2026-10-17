@@ -3,7 +3,7 @@
 Quality gate for TECH_SPEC.md: a spec that fails this is not finished.
 
 Usage:
-    python3 lint_tech_spec.py <TECH_SPEC.md> [<answers.json> <test_cases.json>]
+    python3 lint_tech_spec.py <TECH_SPEC.md> [<review.json> <test_cases.json>]
 
 Checks:
   - all 21 required sections exist as "## " headings (order free, keyword match)

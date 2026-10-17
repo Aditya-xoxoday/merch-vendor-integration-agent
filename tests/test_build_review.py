@@ -57,6 +57,12 @@ def test_sandbox_failure_on_must_have_is_no(br, data, all_yes):
     assert ev["decision"].startswith("No") and ev["api_works"].startswith("Problems found")
 
 
+def test_sandbox_failure_on_alternative_check_still_blocks(br, data, all_yes):
+    answers, sm = all_yes
+    answers["IDM-02"]["live"] = "Fail"  # duplicates create a second order, even though lookup exists
+    assert run(br, data, answers, sm)["decision"].startswith("No")
+
+
 def test_webhook_or_polling_is_enough(br, data, all_yes):
     answers, sm = all_yes
     answers["WHK-01"] = {"provided": "No", "details": "no webhooks"}
