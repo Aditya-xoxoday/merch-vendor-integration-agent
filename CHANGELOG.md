@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1.0 (2026-10-18)
+- The chat reply is now a boxed report in merch-sensei style, printed by `build_review.py`:
+  - VERDICT, API TEST, SECURITY
+  - one line per must-have with ✅/⚠️/❌
+  - areas with counts and gaps
+  - top vendor questions, next steps, output path
+- The 7 must-have groups have short labels (PLACE ORDER, ADDRESS, PRODUCT ID, ORDER STATUS,
+  TRACKING, SAFE RETRY, SECURE LOGIN).
+
 ## 4.0.0 (2026-10-18)
 - **One output per review:** `<Vendor>_Review.xlsx` with 4 tabs:
   - Summary: decision, must-haves, top questions, security, next steps, copy-paste summary

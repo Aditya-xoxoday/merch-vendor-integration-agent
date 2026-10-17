@@ -46,7 +46,8 @@ The full workflow is in `.claude/commands/merch-vendor-agent.md`. The short vers
    ```bash
    python3 scripts/build_review.py references/test_cases.json review.json <Vendor>_Review.xlsx
    ```
-6. Reply with the decision, the 7 must-haves, the top open points and the workbook.
+6. Reply with the boxed report the builder prints (VERDICT, API TEST, MUST-HAVES, AREAS, ASK THE VENDOR,
+   NEXT STEPS, OUTPUT) inside a code block, plus the workbook.
 
 **On request only:**
 - Full tech spec (`references/templates/TECH_SPEC_TEMPLATE.md`, checked by `scripts/lint_tech_spec.py`)

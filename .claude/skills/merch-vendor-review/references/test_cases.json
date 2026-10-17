@@ -1327,6 +1327,7 @@
  ],
  "must_haves": [
   {
+   "short": "PLACE ORDER",
    "item": "Place an order and get an order ID back",
    "all": [
     "ORD-01",
@@ -1334,18 +1335,21 @@
    ]
   },
   {
+   "short": "ADDRESS",
    "item": "Our address fields fit their order format",
    "all": [
     "ORD-05"
    ]
   },
   {
+   "short": "PRODUCT ID",
    "item": "The product ID from their catalogue (or product list) is what the order takes",
    "all": [
     "CAT-03"
    ]
   },
   {
+   "short": "ORDER STATUS",
    "item": "Get the order status (full status list, a status lookup, and updates by webhook or polling)",
    "all": [
     "STS-01",
@@ -1357,12 +1361,14 @@
    ]
   },
   {
+   "short": "TRACKING",
    "item": "Get courier and tracking number after dispatch",
    "all": [
     "TRK-01"
    ]
   },
   {
+   "short": "SAFE RETRY",
    "item": "Retry safely without creating duplicate orders",
    "all": [
     "IDM-01"
@@ -1373,6 +1379,7 @@
    ]
   },
   {
+   "short": "SECURE LOGIN",
    "item": "Secure login that works (auth method documented, HTTPS)",
    "all": [
     "AUTH-01",

@@ -6,6 +6,8 @@ Build the ONE output of a review: a single workbook that answers "can we integra
 Usage:
     python3 build_review.py <test_cases.json> <review.json> <Vendor>_Review.xlsx [--md <report.md>]
 
+Prints the review as a boxed report (merch-sensei style) for the chat reply.
+
 Workbook tabs:
     Summary           decision, must-haves, what we need from the vendor, security, next steps,
                       and a short copy-paste summary for Jira/Slack
@@ -164,7 +166,8 @@ def evaluate(data, answers, status_map):
         ids = list(all_states) + any_ids
         evidence = "\n".join(f"{tid}: {answers.get(tid, {}).get('details', '') or provided(tid)}"
                               for tid in ids if provided(tid) != "Not available" or tid in all_states)
-        must.append({"item": g["item"], "state": s, "ids": ids, "evidence": evidence})
+        must.append({"item": g["item"], "short": g.get("short", g["item"]), "state": s, "ids": ids,
+                     "evidence": evidence})
 
     counts = {s: sum(m["state"] == s for m in must) for s in ("Met", "Open", "Missing")}
 
@@ -443,6 +446,72 @@ def build_checks(wb, data, answers, ev):
     ws.sheet_view.showGridLines = False
 
 
+# ---------- terminal report (merch-sensei style) ----------
+
+ICON = {"Met": "✅", "Open": "⚠️", "Missing": "❌"}
+BAR = "━" * 64
+
+
+def clip(text, n=88):
+    text = " ".join(str(text).split())
+    return text if len(text) <= n else text[: n - 1] + "…"
+
+
+def wrapped(label, icon, text, width=100):
+    """'LABEL           ✅ text' with long text wrapped under itself."""
+    import textwrap
+    head = f"{label:<15} {icon} " if icon else f"{label} "
+    body = textwrap.wrap(" ".join(str(text).split()), width=width - 19) or [""]
+    pad = " " * (19 if icon else len(head))
+    return [head + body[0]] + [pad + line for line in body[1:]]
+
+
+def build_terminal_report(data, payload, ev, out_path=None):
+    """The boxed report the agent prints in chat, in the same style as merch-sensei."""
+    c = ev["counts"]
+    notes = payload.get("must_have_notes", {})
+    verdict_icon = "❌" if c["Missing"] else "⚠️" if c["Open"] or ev["escalations"] else "✅"
+    api_icon = "❌" if ev["live_fail"] else "✅" if ev["api_works"].startswith("Works") else "⚠️"
+    lines = [BAR, f"🛒 Merch Vendor Review: {payload.get('vendor_name', 'Vendor')}", BAR,
+             f"{'VERDICT':<15} {verdict_icon} {ev['decision']}",
+             f"{'':<15}    {ev['reason']}",
+             f"{'API TEST':<15} {api_icon} {ev['api_works']}"]
+    if payload.get("security"):
+        sec_icon = "❌" if payload["answers"].get("SEC-07", {}).get("provided") == "No" else "✅"
+        lines += wrapped("SECURITY", sec_icon, payload["security"])
+    lines += ["", f"MUST-HAVES ({c['Met']}/{len(ev['must'])} met · {c['Open']} open · {c['Missing']} missing)"]
+    for i, m in enumerate(ev["must"], 1):
+        note = notes.get(str(i)) or m["evidence"].split("\n")[0]
+        lines += wrapped(m["short"], ICON[m["state"]], note)
+    if ev["escalations"]:
+        lines += ["", "NEEDS A CHANGE ON OUR SIDE"]
+        for t in ev["escalations"]:
+            lines += wrapped(t["id"], "⚠️", t["test"])
+    lines += ["", "AREAS (checks answered Yes / applicable)"]
+    tests = data["tests"]
+    for section in dict.fromkeys(t["section"] for t in tests):
+        ts = [t for t in tests if t["section"] == section and ev["provided"](t["id"]) != "NA"]
+        yes = sum(ev["state"](t["id"]) == "Met" for t in ts)
+        icon = "✅" if ts and yes == len(ts) else "❌" if yes == 0 else "⚠️"
+        lines.append(f"{clip(section, 34):<34} {icon} {yes}/{len(ts)}")
+    imp, nice = ev["covered"]["Important"], ev["covered"]["Nice-to-have"]
+    lines.append(f"{'GAPS':<15} Important {imp[0]}/{imp[1]} covered · Nice-to-have {nice[0]}/{nice[1]} (never block)")
+    qs = vendor_questions(data, payload, ev)
+    if qs:
+        lines += ["", "ASK THE VENDOR (top 5)"]
+        for i, q in enumerate(qs[:5], 1):
+            lines += wrapped(f" {i}. [{q[0]}]", "", q[1])
+    steps = payload.get("next_steps") or []
+    if steps:
+        lines += ["", "NEXT STEPS"]
+        for i, x in enumerate(steps, 1):
+            lines += wrapped(f" {i}.", "", f"{x['step']} ({x.get('who', '')})")
+    if out_path:
+        lines += ["", f"{'OUTPUT':<15} {out_path}"]
+    lines.append(BAR)
+    return "\n".join(lines)
+
+
 # ---------- markdown (optional) ----------
 
 def build_markdown(data, answers, payload, ev):
@@ -501,13 +570,11 @@ def main():
     build_tech(wb, payload)
     build_checks(wb, data, answers, ev)
     wb.save(out_path)
-    print(f"Wrote {out_path}")
     if md_path:
         with open(md_path, "w") as f:
             f.write(build_markdown(data, answers, payload, ev))
         print(f"Wrote {md_path}")
-    c = ev["counts"]
-    print(f"{ev['decision']} | must-haves {c['Met']} met, {c['Open']} open, {c['Missing']} missing | {ev['api_works']}")
+    print(build_terminal_report(data, payload, ev, out_path))
 
 
 if __name__ == "__main__":

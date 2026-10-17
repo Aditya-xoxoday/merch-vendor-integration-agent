@@ -107,6 +107,17 @@ def test_cli_builds_xlsx_and_markdown(tmp_path):
     assert "Can we integrate?" in text and "## Must-haves" in text
 
 
+def test_cli_prints_boxed_report(tmp_path):
+    from conftest import ROOT
+    r = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_review.py"),
+                        str(SKILL / "references" / "test_cases.json"), str(ROOT / "examples" / "printstop" / "review.json"),
+                        str(tmp_path / "o.xlsx")], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    for label in ("VERDICT", "API TEST", "PLACE ORDER", "SAFE RETRY", "AREAS", "ASK THE VENDOR", "OUTPUT"):
+        assert label in r.stdout
+    assert "Likely yes" in r.stdout and "—" not in r.stdout
+
+
 def test_cli_exits_nonzero_on_invalid(tmp_path):
     answers = tmp_path / "a.json"
     answers.write_text(json.dumps({"answers": {"ORD-02": {"provided": "Yes"}}}))

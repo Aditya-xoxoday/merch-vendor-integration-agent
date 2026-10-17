@@ -113,8 +113,10 @@ Decision:
    - email plain
    - nothing in `reviews/` staged in git
 
-**Reply** in chat with: the decision, the must-have table (7 lines), the top open points, any
-security alert, and the link to the workbook. Nothing else.
+**Reply** in chat with the boxed report that `build_review.py` prints (merch-sensei style:
+VERDICT, API TEST, SECURITY, MUST-HAVES, AREAS, GAPS, ASK THE VENDOR, NEXT STEPS, OUTPUT). Paste it
+exactly, inside a code block. If credentials were found, put one line above the box asking the
+vendor to rotate them. Nothing else.
 
 ## MODE: LIVE (sandbox only)
 1. Confirm the base URL is a sandbox. If it is production, stop.
