@@ -660,7 +660,68 @@
    "Status checks need no override: their field is orders_status, which our polling already reads.",
    "No webhooks: nothing to add in plumAuth. No balance API: no karma_reports module.",
    "Full developer spec: Printstop_TECH_SPEC.md."
-  ]
+  ],
+  "class_name": "Printstop",
+  "model": "printstop_merchandise",
+  "build_status": "NEW, or DIFF if a connector exists",
+  "complexity": "Medium-High: nested order body, token plus 2 static headers, one details call per product, amounts entered by hand (fixedSku), recipient-as-profile, no safe retry.",
+  "risks": [
+   "Timeout or 5xx after the order was created: no lookup by reference, so manual reconcile.",
+   "409 returns another reward's order for the same user: never link automatically.",
+   "Status list incomplete: unmapped statuses never finish, so polling continues forever.",
+   "Suspected base bug re-sends status emails on every poll (polling-only vendor).",
+   "Token lifetime unknown."
+  ],
+  "feasibility": {
+   "AUTH": {
+    "status": "⚠️",
+    "note": "JWT via GET generate_token → tokens table (credentials under one key \"printstop\"). TTL not documented. Every call also needs client-id and client-secret headers."
+   },
+   "ORDER": {
+    "status": "✅",
+    "note": "POST method=order → orders_id. Async (In Production after) → iswebhookConfiration true. code/apiOrderId/addedBy contract OK."
+   },
+   "IDEMPOTENCY": {
+    "status": "⚠️",
+    "note": "reference_number optional, not echoed, not searchable. 409 is keyed on the user, so never auto-link via callVendorRefetch."
+   },
+   "ADDRESS": {
+    "status": "✅",
+    "note": "shipping_* fields map. Recipient name/phone go in profile (shipping has no name). company_name, corporate_id constants. Country 99 = India only."
+   },
+   "STATUS MAP": {
+    "status": "⚠️",
+    "note": "Only \"in production\" → CONFIRMED known. Full list needed."
+   },
+   "WEBHOOK": {
+    "status": "➖",
+    "note": "None. Polling only; nothing to add in plumAuth."
+   },
+   "POLLING": {
+    "status": "✅",
+    "note": "order_status returns top-level orders_status (the field the base reads). Add id to merchandiseOrderTrackingVendorIds."
+   },
+   "PRE-CONFIRM FAIL": {
+    "status": "⚠️",
+    "note": "Not documented whether an accepted order can be rejected (approval workflow exists in create_user)."
+   },
+   "TRACKING": {
+    "status": "✅",
+    "note": "tracking_number, tracking_url, shipping_company, orders_due_date, actual_delivery_date."
+   },
+   "CANCEL/RETURNS": {
+    "status": "⚠️",
+    "note": "No cancel or returns API (outbound cancel unsupported on our side anyway)."
+   },
+   "CATALOG": {
+    "status": "⚠️",
+    "note": "product_listing (total, no paging) + product_details per product (selector undocumented). No price, brand or stock. sku = {product_id}_{size_id}."
+   },
+   "BALANCE": {
+    "status": "➖",
+    "note": "None. No karma_reports module needed."
+   }
+  }
  },
  "must_have_notes": {
   "1": "POST method=order with documented fields returns orders_id.",

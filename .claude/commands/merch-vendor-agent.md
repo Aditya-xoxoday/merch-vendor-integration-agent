@@ -113,9 +113,17 @@ Decision:
    - email plain
    - nothing in `reviews/` staged in git
 
-**Reply** in chat with the boxed report that `build_review.py` prints (merch-sensei style:
-VERDICT, API TEST, SECURITY, MUST-HAVES, AREAS, GAPS, ASK THE VENDOR, NEXT STEPS, OUTPUT). Paste it
-exactly, inside a code block. If credentials were found, put one line above the box asking the
+**Reply** in chat with **both boxes** that `build_review.py` prints, pasted exactly inside one
+code block:
+1. **🛒 Merch Vendor Review**: VERDICT, API TEST, SECURITY, MUST-HAVES, AREAS, GAPS, ASK THE
+   VENDOR, NEXT STEPS, OUTPUT. This is the decision, for everyone.
+2. **🛠️ Build Feasibility (merch-sensei format)**: AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP,
+   WEBHOOK, POLLING, PRE-CONFIRM FAIL, TRACKING, CANCEL/RETURNS, CATALOG, BALANCE, SANDBOX RUN,
+   COMPLEXITY, RISKS, BUILD FILES, CHECKLIST, NOTES, HANDOFF. This is the build view, for developers.
+
+Fill `tech.feasibility` (one status and note per line), `tech.class_name`, `tech.model`,
+`tech.complexity` and `tech.risks` in review.json so box 2 is specific. Lines you leave out are
+worked out from the checks. If credentials were found, put one line above the boxes asking the
 vendor to rotate them. Nothing else.
 
 ## MODE: LIVE (sandbox only)

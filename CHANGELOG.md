@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.2.0 (2026-10-18)
+- Every review now replies with **two boxes**:
+  - the review (decision for everyone)
+  - **Build Feasibility in merch-sensei format**: AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP,
+    WEBHOOK, POLLING, PRE-CONFIRM FAIL, TRACKING, CANCEL/RETURNS, CATALOG, BALANCE, then sandbox run,
+    complexity, risks, build files, checklist, notes, handoff
+- Feasibility lines come from `tech.feasibility` when given, otherwise from the checks (webhook or
+  polling is enough; a missing balance API is shown as not needed).
+- The Tech tab starts with the same feasibility table.
+
 ## 4.1.0 (2026-10-18)
 - The chat reply is now a boxed report in merch-sensei style, printed by `build_review.py`:
   - VERDICT, API TEST, SECURITY

@@ -6,7 +6,9 @@ Build the ONE output of a review: a single workbook that answers "can we integra
 Usage:
     python3 build_review.py <test_cases.json> <review.json> <Vendor>_Review.xlsx [--md <report.md>]
 
-Prints the review as a boxed report (merch-sensei style) for the chat reply.
+Prints TWO boxed reports for the chat reply: the review (decision, must-haves, areas, vendor
+questions) and the build feasibility in merch-sensei's format (AUTH, ORDER, IDEMPOTENCY, ...,
+build files, handoff).
 
 Workbook tabs:
     Summary           decision, must-haves, what we need from the vendor, security, next steps,
@@ -40,7 +42,10 @@ Workbook tabs:
         "failure_modes": [{"failure": "", "handling": "", "severity": ""}],
         "assumptions": [{"assumption": "", "verify": ""}],
         "config": [{"where": "", "change": ""}],
-        "build_notes": ["..."]
+        "build_notes": ["..."],
+        "class_name": "Printstop", "model": "printstop_merchandise", "build_status": "NEW or DIFF",
+        "complexity": "Medium (why)", "risks": ["..."],
+        "feasibility": {"AUTH": {"status": "⚠️", "note": "..."}}   # optional overrides per line
       }
     }
 
@@ -62,6 +67,7 @@ Decision (from the Must-have checks only; Important and Nice-to-have never block
 Exits 2 on invalid input (unknown id, bad value, Yes/No without evidence, bad status target).
 """
 import json
+import re
 import sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -388,7 +394,7 @@ def build_questions(wb, data, payload, ev):
         s.text(payload["vendor_email"], height=max(150, 15 * payload["vendor_email"].count("\n")))
 
 
-def build_tech(wb, payload):
+def build_tech(wb, payload, ev):
     tech = payload.get("tech")
     if not tech:
         return
@@ -398,6 +404,8 @@ def build_tech(wb, payload):
     if tech.get("api_summary"):
         s.heading("What the API does")
         s.text(tech["api_summary"], height=60)
+    s.heading("Build feasibility (merch-sensei format)")
+    s.table(["Line", "Status", "Note"], [(l, i, n) for l, i, n in feasibility(payload, ev)])
     sm = payload.get("status_map", {})
     for key, title, cols in TECH_SECTIONS:
         rows = tech.get(key) or []
@@ -457,12 +465,18 @@ def clip(text, n=88):
     return text if len(text) <= n else text[: n - 1] + "…"
 
 
-def wrapped(label, icon, text, width=100):
-    """'LABEL           ✅ text' with long text wrapped under itself."""
+def wrapped(label, icon, text, width=100, w=15):
+    """'LABEL           ✅ text' with long text wrapped under itself.
+    icon None = list item (indent under the label text), icon "" = aligned label without an icon."""
     import textwrap
-    head = f"{label:<15} {icon} " if icon else f"{label} "
-    body = textwrap.wrap(" ".join(str(text).split()), width=width - 19) or [""]
-    pad = " " * (19 if icon else len(head))
+    if icon is None:
+        head = f"{label} "
+    elif icon:
+        head = f"{label:<{w}} {icon} "
+    else:
+        head = f"{label:<{w}}    "
+    pad = " " * (w + 4) if icon is not None else " " * len(head)  # icons are 2 columns wide on screen
+    body = textwrap.wrap(" ".join(str(text).split()), width=width - len(pad)) or [""]
     return [head + body[0]] + [pad + line for line in body[1:]]
 
 
@@ -500,14 +514,103 @@ def build_terminal_report(data, payload, ev, out_path=None):
     if qs:
         lines += ["", "ASK THE VENDOR (top 5)"]
         for i, q in enumerate(qs[:5], 1):
-            lines += wrapped(f" {i}. [{q[0]}]", "", q[1])
+            lines += wrapped(f" {i}. [{q[0]}]", None, q[1])
     steps = payload.get("next_steps") or []
     if steps:
         lines += ["", "NEXT STEPS"]
         for i, x in enumerate(steps, 1):
-            lines += wrapped(f" {i}.", "", f"{x['step']} ({x.get('who', '')})")
+            lines += wrapped(f" {i}.", None, f"{x['step']} ({x.get('who', '')})")
     if out_path:
         lines += ["", f"{'OUTPUT':<15} {out_path}"]
+    lines.append(BAR)
+    return "\n".join(lines)
+
+
+FEAS_MAP = [  # merch-sensei feasibility lines → checks that decide them
+    ("AUTH", ["AUTH-01", "AUTH-02", "AUTH-03"]),
+    ("ORDER", ["ORD-01", "ORD-02", "ORD-04"]),
+    ("IDEMPOTENCY", ["IDM-01", "IDM-02", "IDM-03"]),
+    ("ADDRESS", ["ORD-05", "ORD-06", "ORD-08"]),
+    ("STATUS MAP", ["STS-01", "STS-02"]),
+    ("WEBHOOK", ["WHK-01", "WHK-03", "WHK-04", "WHK-05"]),
+    ("POLLING", ["POL-01", "POL-02"]),
+    ("PRE-CONFIRM FAIL", ["ORD-13"]),
+    ("TRACKING", ["TRK-01", "TRK-02"]),
+    ("CANCEL/RETURNS", ["RTN-01", "RTN-03"]),
+    ("CATALOG", ["CAT-01", "CAT-02", "CAT-03", "CAT-04"]),
+    ("BALANCE", ["BAL-01"]),
+]
+
+
+def feasibility(payload, ev):
+    """[(line, icon, note)]: tech.feasibility overrides, otherwise derived from the checks."""
+    override = (payload.get("tech") or {}).get("feasibility", {})
+    answers = payload.get("answers", {})
+    rows = []
+    for line, ids in FEAS_MAP:
+        if line in override:
+            rows.append((line, override[line].get("status", "⚠️"), override[line].get("note", "")))
+            continue
+        states = [ev["state"](i) for i in ids]
+        documented = [i for i in ids if ev["provided"](i) not in ("Not available",)]
+        if all(st == "Met" for st in states):
+            icon = "✅"
+        elif not documented:
+            icon = "❌"
+        else:
+            icon = "⚠️"
+        note = next((answers[i]["details"] for i in ids if answers.get(i, {}).get("details")), "Not documented")
+        rows.append((line, icon, note))
+    by = {r[0]: r for r in rows}
+    # webhook OR polling is enough; balance is never required
+    if "WEBHOOK" not in override and by["WEBHOOK"][1] == "❌" and by["POLLING"][1] == "✅":
+        by["WEBHOOK"] = ("WEBHOOK", "➖", "None documented; polling is used instead")
+    if "POLLING" not in override and by["POLLING"][1] == "❌" and by["WEBHOOK"][1] == "✅":
+        by["POLLING"] = ("POLLING", "➖", "Not needed; webhooks are used")
+    if "BALANCE" not in override and by["BALANCE"][1] == "❌":
+        by["BALANCE"] = ("BALANCE", "➖", "None (not needed; no karma_reports module)")
+    return [by[line] for line, _ in FEAS_MAP]
+
+
+def build_feasibility_report(data, payload, ev):
+    """Second box: build feasibility in merch-sensei's format, for developers."""
+    tech = payload.get("tech") or {}
+    cls = tech.get("class_name") or "".join(
+        w[:1].upper() + w[1:] for w in re.split(r"[^A-Za-z0-9]+", payload.get("vendor_name", "Vendor").split("(")[0]) if w)
+    lines = [BAR, f"🛠️ Build Feasibility (merch-sensei format): {cls}", BAR]
+    for line, icon, note in feasibility(payload, ev):
+        lines += wrapped(line, icon, note, w=17)
+    live_total = sum(ev["live"](t["id"]) != "NA" for t in data["tests"])
+    live_run = sum(ev["live"](t["id"]) in ("Pass", "Fail") for t in data["tests"])
+    lines += wrapped("SANDBOX RUN", "", f"{live_run}/{live_total} sandbox checks run; "
+                     f"{len(ev['live_fail'])} failed", w=17)
+    if tech.get("complexity"):
+        lines += wrapped("COMPLEXITY", "", tech["complexity"], w=17)
+    risks = tech.get("risks") or [f["failure"] for f in tech.get("failure_modes", []) if f.get("severity") == "High"]
+    if risks:
+        lines += ["", "RISKS"]
+        for r in risks:
+            lines += wrapped(" •", None, r)
+    model = tech.get("model", "{model}")
+    status = tech.get("build_status", "NEW")
+    lines += ["", "BUILD FILES (vendor-integrations, tracked)",
+              f" • src/vendors/integratedVendors/{cls}.ts".ljust(64) + f"[{status}]",
+              f" • src/vendors/vendorTemplates/{cls[:1].lower() + cls[1:]}Types.ts".ljust(64) + "[NEW, if needed]",
+              " • src/configs/baseConfigs.json.sample".ljust(64) + "[UPDATE mapping + tracking ids]",
+              f" • tests/vendors/{cls.lower()}.*.test.ts + fixtures".ljust(64) + "[NEW]",
+              "LOCAL / DEPLOY CONFIG (gitignored, never in a PR)",
+              f" • src/configs/vendorConfigs/{cls}.json, baseConfigs.json mappings (per env)",
+              "CHECKLIST (outside VI)",
+              " • OPMS integratedVendors (string id), schedulers (token, sync, tracking)",
+              f" • DB: vendor, vendor_to_model, product_api_model_names, {model}_products",
+              " • karma admin page, menu, routes, permissions (check what already exists)"]
+    if tech.get("build_notes"):
+        lines += ["", "NOTES"]
+        for n in tech["build_notes"]:
+            lines += wrapped(" •", None, n)
+    ready = ev["counts"]["Missing"] == 0 and ev["counts"]["Open"] == 0
+    lines += ["", *wrapped("HANDOFF", "", "/merch-sensei ONBOARD: " + ("ready" if ready else
+                                                                    "after the open must-haves are answered"), w=17)]
     lines.append(BAR)
     return "\n".join(lines)
 
@@ -567,7 +670,7 @@ def main():
     wb = Workbook()
     build_summary(wb, data, payload, ev)
     build_questions(wb, data, payload, ev)
-    build_tech(wb, payload)
+    build_tech(wb, payload, ev)
     build_checks(wb, data, answers, ev)
     wb.save(out_path)
     if md_path:
@@ -575,6 +678,8 @@ def main():
             f.write(build_markdown(data, answers, payload, ev))
         print(f"Wrote {md_path}")
     print(build_terminal_report(data, payload, ev, out_path))
+    print()
+    print(build_feasibility_report(data, payload, ev))
 
 
 if __name__ == "__main__":

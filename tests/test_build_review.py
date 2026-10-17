@@ -116,6 +116,17 @@ def test_cli_prints_boxed_report(tmp_path):
     for label in ("VERDICT", "API TEST", "PLACE ORDER", "SAFE RETRY", "AREAS", "ASK THE VENDOR", "OUTPUT"):
         assert label in r.stdout
     assert "Likely yes" in r.stdout and "—" not in r.stdout
+    for label in ("Build Feasibility", "AUTH", "IDEMPOTENCY", "STATUS MAP", "PRE-CONFIRM FAIL", "BUILD FILES", "HANDOFF"):
+        assert label in r.stdout
+
+
+def test_feasibility_derived_without_overrides(br, data, all_yes):
+    answers, sm = all_yes
+    for tid in ("WHK-01", "WHK-03", "WHK-04", "WHK-05", "BAL-01"):  # no webhooks, no balance API
+        answers[tid] = {"provided": "Not available", "details": ""}
+    ev = br.evaluate(data, answers, sm)
+    rows = {line: icon for line, icon, _ in br.feasibility({"answers": answers}, ev)}
+    assert rows["ORDER"] == "✅" and rows["WEBHOOK"] == "➖" and rows["BALANCE"] == "➖"
 
 
 def test_cli_exits_nonzero_on_invalid(tmp_path):
