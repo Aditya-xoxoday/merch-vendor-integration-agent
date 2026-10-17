@@ -17,6 +17,10 @@ def test_truncated_samples_ignored(ss):
     assert ss.scan('"access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."') == []
 
 
+def test_code_references_ignored(ss):
+    assert ss.scan('"client-secret": creds.clientSecret, api_key: this.config.configs.apiKey') == []
+
+
 def test_patterns(ss):
     text = "AKIAABCDEFGHIJKLMNOP eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghijklmnop https://u:supersecret@host"
     labels = {label for label, _ in ss.scan(text)}

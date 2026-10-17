@@ -32,6 +32,7 @@ See [docs/DECISION.md](docs/DECISION.md) for exactly how the result is worked ou
 | **ANALYZE** (default) | share a doc and say "analyze" | Full review pack |
 | **LIVE** | "run live" with sandbox credentials | Sandbox test results added |
 | **COMMS** | "vendor email", "jira comment", "summary" | Ready-to-send messages |
+| **TECH** | always, or "tech pack" | Developer pack at merch-sensei depth |
 | **HANDOFF** | "hand off" (when the answer is yes) | Build brief for merch-sensei |
 | **DIFF** | a new version of a reviewed doc | What changed, new decision |
 
@@ -44,9 +45,21 @@ See [docs/DECISION.md](docs/DECISION.md) for exactly how the result is worked ou
 | `00_doc_inventory.md` | Every source, endpoint, image and hidden hint |
 | `01_field_mapping.md` | Vendor fields mapped to our order and product fields |
 | `VENDOR_EMAIL.md`, `JIRA_COMMENT.md`, `SUMMARY.md` | Short, plain messages |
-| `HANDOFF_MERCH_SENSEI.md` | Build brief (handoff mode) |
 
-Example: [examples/printstop/ANALYSIS.md](examples/printstop/ANALYSIS.md).
+**Developer tech pack (`tech/`), at merch-sensei depth:**
+
+| File | Contents |
+|---|---|
+| `TECH_SPEC.md` | Feasibility block, endpoint table, method-by-method class plan, order body mapping, config and registration, risks with mitigation, open questions, "done means" |
+| `vendor_config.draft.json` | `vendorConfigs` draft in merch-sensei shape (placeholder credentials) |
+| `<Vendor>.postman_collection.json` + env template | Every endpoint plus negative cases with assertions, ready for `postman collection run` on sandbox |
+| `TEST_PLAN.md` | Sandbox contract tests plus the Jest unit test list |
+| `DEBUG_RUNBOOK.md` | Wiring checks, symptom → cause table, SQL |
+| `HANDOFF_MERCH_SENSEI.md` | merch-sensei Batch 1-7 answers, pre-filled |
+| `fixtures/` | Example responses (PII removed) for unit tests |
+
+Example: [examples/printstop/ANALYSIS.md](examples/printstop/ANALYSIS.md) and its tech pack
+[examples/printstop/tech/TECH_SPEC.md](examples/printstop/tech/TECH_SPEC.md).
 
 ## Repository layout
 ```
@@ -58,16 +71,18 @@ merch-vendor-integration-agent/
 │       ├── references/
 │       │   ├── test_cases.json            # 130 checks + 7 must-have groups
 │       │   ├── platform_contract.md       # what our system needs, and why
+│       │   ├── connector_reference.md     # build depth: lifecycle, class contract, config, debug
 │       │   ├── doc_intake.md              # how to read each doc type; synonyms
 │       │   ├── platform_playbooks.md      # Magento / Shopify / WooCommerce questions
 │       │   ├── xoxoday_api.md
 │       │   ├── example_answers.json
-│       │   └── templates/                 # analysis, vendor email, Jira, summary
+│       │   └── templates/                 # analysis, tech spec, vendor email, Jira, summary
 │       └── scripts/
 │           ├── build_review.py            # decision + workbook + REPORT.md
-│           └── scan_secrets.py            # finds leaked credentials (redacted)
+│           ├── scan_secrets.py            # finds leaked credentials (redacted)
+│           └── build_tech_pack.py         # tech.json → vendor config draft + Postman collection
 ├── docs/  DECISION.md  ARCHITECTURE.md  GAP_ANALYSIS.md  TEST_CATALOG.md
-├── examples/printstop/                    # full example review
+├── examples/printstop/                    # full example review + tech/ pack
 ├── tests/                                 # automated tests (CI)
 ├── tools/gen_test_catalog.py
 ├── .github/workflows/ci.yml

@@ -1,0 +1,13 @@
+{"success": "true", "status": 200, "product_details": {
+  "product_id": 8093, "product_name": "Jack and Jones Jacquard Polo Olive",
+  "product_short_des": "<p>Ranging from Rs. 925 to Rs. 1075</p>",
+  "product_long_des": "Fabric: Bio wash, 230 GSM, 100% cotton, Pique Fabric Combed",
+  "product_image": "{cdnurl}/8093_Jack-and-Jones-Jacquard-Polo_Olive.jpg",
+  "category_id": 921, "visible": "Active", "price_defining_method": "Range Based With Multiplication",
+  "tax_details": {"Specific Tax": [{"tax_type": "CGST", "tax_value": 6}, {"tax_type": "IGST", "tax_value": 12}, {"tax_type": "SGST", "tax_value": 6}]},
+  "product_hsn": "61051020",
+  "product_size": [{"size_id": 14513, "products_id": 8093, "size_title": "Extra Small", "size_unit": "MM", "default_size": 0, "sort_order": 1, "visible": "Active"}],
+  "product_production_days": [{"size_id": 14513, "production_days": 6}],
+  "product_images": [{"image_title": "Jack and Jones Jacquard Polo Olive", "image_url": "{cdnurl}/8093_Jack-and-Jones-Jacquard-Polo_Olive39.jpg", "gallery_type": "Image"}],
+  "templates": [{"template_id": 1234, "template_title": "Jack and Jones Jacquard Polo Olive", "block1_name": "name_surname", "block1_type": "text", "block2_name": "upload_image", "block2_type": "image"}]
+}}

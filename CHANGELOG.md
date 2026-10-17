@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.1.0 (2026-10-18)
+- Developer tech pack at merch-sensei depth, produced by every review (MODE: TECH). It contains:
+  - TECH_SPEC (feasibility block, endpoints, class plan, order body mapping, config, risks)
+  - vendor config draft
+  - Postman collection with negative cases
+  - test plan (sandbox + Jest)
+  - debug runbook
+  - merch-sensei handoff
+  - fixtures
+- `build_tech_pack.py`: validates placeholders, sandbox-only URLs and status targets; generates
+  the config draft and Postman files.
+- `connector_reference.md`: lifecycle, class contract, config rules, platform limits, debug signals.
+- The scanner ignores code references such as `creds.clientSecret`.
+- Printstop example gains a full `tech/` pack.
+
 ## 3.0.0 (2026-10-18)
 - The decision now answers "Can we integrate?" from 7 must-haves only, and "Does the API work?"
   from sandbox tests. The 0-100 score is gone. A missing balance API (now Nice-to-have) no longer

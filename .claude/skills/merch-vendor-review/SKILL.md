@@ -1,6 +1,6 @@
 ---
 name: xoxoday-merchandise-vendor-review
-description: "Checks whether a Merchandise vendor's API can be integrated with Xoxoday/Plum and whether it works. Use whenever someone shares a vendor API doc link, Postman collection, Swagger/OpenAPI spec, PDF or screenshots for a merchandise, physical product, e-commerce store (Magento, Shopify, WooCommerce) or dropship vendor and asks to review it, analyse it, test it, fill the vendor questionnaire, or decide go/no-go. Runs 130 checks (docs plus sandbox tests). 7 must-haves (place order, order ID, address fit, product ID, order status, tracking, safe retry, secure login) decide 'can we integrate'. Everything else, such as a balance API, is reported as a gap and never blocks. Also scans docs for leaked credentials. Outputs ANALYSIS.md, REPORT.md, an Excel workbook, field mapping, a vendor email and a Jira comment."
+description: "Checks whether a Merchandise vendor's API can be integrated with Xoxoday/Plum and whether it works. Use whenever someone shares a vendor API doc link, Postman collection, Swagger/OpenAPI spec, PDF or screenshots for a merchandise, physical product, e-commerce store (Magento, Shopify, WooCommerce) or dropship vendor and asks to review it, analyse it, test it, fill the vendor questionnaire, or decide go/no-go. Runs 130 checks (docs plus sandbox tests). 7 must-haves (place order, order ID, address fit, product ID, order status, tracking, safe retry, secure login) decide 'can we integrate'. Everything else, such as a balance API, is reported as a gap and never blocks. Also scans docs for leaked credentials. Outputs ANALYSIS.md, REPORT.md, an Excel workbook, field mapping, a vendor email, a Jira comment, and a developer tech pack at merch-sensei depth (tech spec, class plan, vendor config draft, Postman collection, unit test plan, debug runbook, merch-sensei handoff)."
 ---
 
 # Merchandise Vendor API Review (v3)
@@ -62,14 +62,19 @@ our side first.
    python3 scripts/build_review.py references/test_cases.json answers.json Vendor_Review.xlsx --md REPORT.md
    ```
 7. Write ANALYSIS.md, the vendor email, the Jira comment and a summary from `references/templates/`.
-8. Before replying: scan your outputs for secrets and check that the numbers match everywhere.
+8. Write the developer tech pack (`tech/`) at merch-sensei depth, using `references/connector_reference.md`:
+   `tech.json` → `python3 scripts/build_tech_pack.py tech.json tech/` (vendor config draft + Postman
+   collection), plus TECH_SPEC.md, TEST_PLAN.md, DEBUG_RUNBOOK.md, HANDOFF_MERCH_SENSEI.md and fixtures.
+9. Before replying: scan your outputs for secrets and check that the numbers match everywhere.
 
 ## Files
 - `references/test_cases.json`: 130 checks (14 must-have, 89 important, 27 nice-to-have) and the 7 must-have groups.
 - `references/platform_contract.md`: what our system needs from a vendor, and why.
+- `references/connector_reference.md`: build-level detail (lifecycle, class contract, config rules, debug signals).
 - `references/doc_intake.md`: how to read each doc type, plus search synonyms.
 - `references/platform_playbooks.md`: questions to ask Magento, Shopify and WooCommerce vendors.
 - `references/templates/`: analysis, vendor email, Jira comment, summary.
 - `references/example_answers.json`: a filled example (fictional vendor).
 - `scripts/build_review.py`: checks the answers, then builds the workbook and REPORT.md.
 - `scripts/scan_secrets.py`: finds credentials in docs and prints them redacted.
+- `scripts/build_tech_pack.py`: tech.json → vendor config draft, Postman collection, environment template.

@@ -17,6 +17,7 @@ documenter link, screenshots or pasted text.
 | **ANALYZE** (default) | a doc or link is shared, "analyze", "review", "can we integrate" | Full analysis pack |
 | **LIVE** | "run live", sandbox credentials shared | Sandbox results added to the same review |
 | **COMMS** | "vendor email", "jira comment", "summary" | Ready-to-send messages |
+| **TECH** | always part of ANALYZE; or "tech pack" | Developer pack at merch-sensei depth (`tech/`) |
 | **HANDOFF** | decision is Yes or Yes on paper, "hand off" | Build brief for `/merch-sensei` |
 | **DIFF** | a new version of a doc already reviewed | What changed, and the new decision |
 
@@ -77,8 +78,10 @@ Work in `reviews/<vendor>/<YYYY-MM-DD>/`. This folder is gitignored, so it never
 7. **Write `ANALYSIS.md`** from `$SKILL/references/templates/ANALYSIS_TEMPLATE.md`. Lead with the
    decision and the must-haves, then what we need from the vendor, other gaps, build notes and
    next steps. Keep it plain.
-8. **Write the messages** (MODE: COMMS): `VENDOR_EMAIL.md`, `JIRA_COMMENT.md` and `SUMMARY.md`.
-9. **Check before replying:**
+8. **Write the tech pack** (MODE: TECH) into `reviews/<v>/<d>/tech/`. Every review gets one,
+   because developers need the depth even when the decision is No (it shows exactly what is missing).
+9. **Write the messages** (MODE: COMMS): `VENDOR_EMAIL.md`, `JIRA_COMMENT.md` and `SUMMARY.md`.
+10. **Check before replying:**
    - [ ] every check answered
    - [ ] `scan_secrets.py` clean on your outputs
    - [ ] numbers match across ANALYSIS, REPORT and the workbook
@@ -102,6 +105,41 @@ the files.
 5. Record `live` (Pass / Fail / Not run) and `live_notes` for each check. Save redacted responses
    in `reviews/<v>/<d>/fixtures/`.
 6. Rebuild. A sandbox Fail on a must-have turns the decision into No.
+
+## MODE: TECH (developer pack, merch-sensei depth)
+Read `$SKILL/references/connector_reference.md` first (lifecycle, class contract, config rules,
+platform limits, debug signals). Re-check against the code if the repo is available.
+
+1. **`tech/tech.json`**: endpoints, token call, headers, redact list, the order body with
+   placeholder test data (`{{var}}`, and `{{int:var}}` for numbers), negative cases (duplicate,
+   invalid product, bad address, expired token, unknown order), polling endpoint and status field,
+   and `status_map`. Credentials must be placeholders.
+2. Generate the machine files:
+   ```bash
+   python3 $SKILL/scripts/build_tech_pack.py reviews/<v>/<d>/tech/tech.json reviews/<v>/<d>/tech
+   ```
+   This writes `vendor_config.draft.json` (vendorConfigs shape), `<Class>.postman_collection.json`
+   (every endpoint plus negative cases, with assertions) and `<Class>.postman_environment.template.json`.
+3. **`tech/TECH_SPEC.md`** (template `$SKILL/references/templates/TECH_SPEC_TEMPLATE.md`):
+   - "check first": does a connector already exist (`git grep` in vendor-integrations, karma, OPMS)?
+   - the feasibility block (AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP, WEBHOOK, POLLING,
+     PRE-CONFIRM FAIL, TRACKING, CANCEL/RETURNS, CATALOG, BALANCE, SANDBOX RUN, COMPLEXITY, RISKS)
+   - an endpoint table: method, query, headers, body, success, errors, quirks
+   - a class plan: every method in the contract, with this vendor's exact fields
+   - the order body mapping from OPMS `shipping_*` fields, as annotated JSON
+   - config and registration: vendorConfigs, baseConfigs, redactHeaders, tracking ids, OPMS,
+     plumAuth, schedulers, DB, karma, karma_reports
+   - risks with mitigation (think through failure cases: timeouts, duplicates, partial syncs,
+     stuck statuses)
+   - open questions, and what "done" means
+4. **`tech/TEST_PLAN.md`**: the sandbox Postman table (request, asserts, closes) plus manual
+   checks, then the Jest unit list (formatOrderResponse, errorHandler, status formatter, status map
+   values, product formatter, sync failure throws, order body mapping, refetch options, headers).
+5. **`tech/DEBUG_RUNBOOK.md`**: wiring sanity, a symptom → cause → check table for this vendor, SQL,
+   and the output format.
+6. **`tech/HANDOFF_MERCH_SENSEI.md`**: merch-sensei Batch 1-7 answers (see MODE: HANDOFF).
+7. **`tech/fixtures/`**: the doc's example responses with PII replaced. Replace them with redacted
+   sandbox responses after LIVE.
 
 ## MODE: HANDOFF
 Write `HANDOFF_MERCH_SENSEI.md` with answers for the merch-sensei onboarding batches:

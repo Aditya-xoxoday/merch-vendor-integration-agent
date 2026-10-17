@@ -66,3 +66,4 @@ users. Webhooks, returns, a settlement report and a balance API are not covered.
 | 5 | Hand off to merch-sensei | Us | build |
 
 Appendix: REPORT.md, Printstop_Merchandise_Review.xlsx, 00_doc_inventory.md, 01_field_mapping.md.
+Developer detail: [tech/TECH_SPEC.md](tech/TECH_SPEC.md) (class plan, config draft, Postman collection, test plan, debug runbook, merch-sensei handoff).

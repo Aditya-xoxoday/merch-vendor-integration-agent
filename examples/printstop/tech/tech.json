@@ -1,0 +1,72 @@
+{
+  "vendor": {
+    "className": "Printstop",
+    "model": "printstop_merchandise",
+    "vendorId": "<vendorId: check existing PRINTSTPMERCHANDISE_VENDOR_ID>",
+    "vendorType": "fixedSku",
+    "async": true,
+    "sandboxBaseUrl": "https://www.psstaging.in"
+  },
+  "credentials": {
+    "clientId": "{{client_id}}",
+    "clientSecret": "{{client_secret}}",
+    "userName": "{{client_email}}",
+    "corporateId": "{{corporate_id}}"
+  },
+  "token": {
+    "method": "GET",
+    "path": "/services/api.php",
+    "query": {"method": "generate_token", "corporate_id": "{{corporate_id}}"},
+    "headers": {"Content-Type": "application/json", "client-secret": "{{client_secret}}", "client-id": "{{client_id}}", "user-name": "{{client_email}}"},
+    "tokenField": "access_token"
+  },
+  "headers": {"Authorization": "Bearer {{access_token}}", "client-secret": "{{client_secret}}", "client-id": "{{client_id}}"},
+  "redactHeaders": ["client-secret", "client-id", "user-name", "Authorization"],
+  "endpoints": [
+    {
+      "key": "categoryListing", "name": "Category listing", "method": "POST", "path": "/services/api.php",
+      "query": {"method": "category_listing"}, "body": null,
+      "expectStatus": 200, "expectFields": ["success", "total", "data"]
+    },
+    {
+      "key": "productListing", "name": "Product listing", "method": "POST", "path": "/services/api.php",
+      "query": {"method": "product_listing"}, "body": null,
+      "expectStatus": 200, "expectFields": ["success", "total", "data"]
+    },
+    {
+      "key": "productDetails", "name": "Product details (product_id param undocumented)", "method": "POST", "path": "/services/api.php",
+      "query": {"method": "product_details", "product_id": "{{test_product_id}}"}, "body": null,
+      "expectStatus": 200, "expectFields": ["success", "product_details"]
+    },
+    {
+      "key": "placeOrder", "name": "Place order", "method": "POST", "path": "/services/api.php",
+      "query": {"method": "order"},
+      "body": {
+        "profile": {"first_name": "Test", "last_name": "Recipient", "email": "{{test_email}}", "mobile_number": "{{test_mobile}}",
+                    "company_name": "{{company_name}}", "corporate_id": "{{int:corporate_id}}", "reference_number": "{{test_reference}}", "department_id": 0},
+        "product": {"product_id": "{{int:test_product_id}}", "size_id": "{{int:test_size_id}}"},
+        "shipping": {"address_line_1": "{{test_address_1}}", "address_line_2": "{{test_address_2}}", "city": "{{test_city}}",
+                     "state": "{{test_state}}", "pincode": "{{test_pincode}}", "country": 99},
+        "corporate_billing_id": "{{int:corporate_billing_id}}"
+      },
+      "expectStatus": 200, "expectFields": ["success", "orders_id"], "saveVar": {"orders_id": "orders_id"},
+      "negatives": [
+        {"name": "same reference again -> 409 with existing orders (IDM-02)", "expectStatus": 409, "expectFields": ["orders"]},
+        {"name": "invalid product -> 400 (ORD-12)", "body": {"profile": {"first_name": "Test", "last_name": "Recipient", "email": "{{test_email}}", "mobile_number": "{{test_mobile}}", "company_name": "{{company_name}}", "corporate_id": "{{int:corporate_id}}"}, "product": {"product_id": 0}, "corporate_shipping_id": "{{corporate_shipping_id}}", "corporate_billing_id": "{{int:corporate_billing_id}}"}, "expectStatus": 400},
+        {"name": "missing address -> 400 (ORD-12)", "body": {"profile": {"first_name": "Test", "last_name": "Recipient", "email": "{{test_email}}", "mobile_number": "{{test_mobile}}", "company_name": "{{company_name}}", "corporate_id": "{{int:corporate_id}}"}, "product": {"product_id": "{{int:test_product_id}}"}}, "expectStatus": 400},
+        {"name": "expired token -> 401 (AUTH-03)", "headers": {"Authorization": "Bearer {{expired_token}}"}, "expectStatus": 401}
+      ]
+    },
+    {
+      "key": "orderStatus", "name": "Track order", "method": "POST", "path": "/services/api.php",
+      "query": {"method": "order_status", "orders_id": "{{orders_id}}"}, "body": null,
+      "expectStatus": 200,
+      "expectFields": ["orders_id", "orders_status_id", "orders_status", "orders_due_date", "actual_delivery_date", "tracking_number", "tracking_url", "shipping_company"],
+      "negatives": [
+        {"name": "unknown order (doc silent: expect a 4xx, not 500) (STS-08)", "query": {"orders_id": "999999999"}, "expectStatus": 400}
+      ]
+    }
+  ],
+  "polling": {"endpoint": "orderStatus", "statusField": "orders_status"},
+  "status_map": {"in production": "CONFIRMED"}
+}

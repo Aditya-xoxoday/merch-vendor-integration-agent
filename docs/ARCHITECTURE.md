@@ -9,8 +9,10 @@ vendor doc(s) ──► /merch-vendor-agent
   5 sandbox tests (Postman CLI, sandbox only) ──► sandbox results
   6 build_review.py ────────────────────────────► workbook + REPORT.md
   7 write-up ───────────────────────────────────► ANALYSIS.md
-  8 messages ───────────────────────────────────► VENDOR_EMAIL / JIRA_COMMENT / SUMMARY
-  9 final checks
+  8 tech pack (connector_reference.md) ─────────► tech/ TECH_SPEC, vendor_config.draft, Postman,
+                                                    TEST_PLAN, DEBUG_RUNBOOK, HANDOFF, fixtures
+  9 messages ───────────────────────────────────► VENDOR_EMAIL / JIRA_COMMENT / SUMMARY
+  10 final checks
                     │ decision Yes / Yes on paper
                     ▼
             HANDOFF_MERCH_SENSEI.md ──► /merch-sensei builds the connector
@@ -27,6 +29,8 @@ vendor doc(s) ──► /merch-vendor-agent
 | `references/templates/` | Output templates |
 | `scripts/build_review.py` | Checks answers, makes the decision, builds the workbook and REPORT.md |
 | `scripts/scan_secrets.py` | Finds credentials, prints them redacted |
+| `scripts/build_tech_pack.py` | tech.json → vendor config draft, Postman collection, env template |
+| `references/connector_reference.md` | Build depth: lifecycle, class contract, config rules, limits, debug signals |
 | `tools/gen_test_catalog.py` | Builds `docs/TEST_CATALOG.md` |
 | `tests/` | Automated tests (run in CI) |
 | `examples/printstop/` | A complete example review |

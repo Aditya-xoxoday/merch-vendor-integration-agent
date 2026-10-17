@@ -1,0 +1,5 @@
+{"success": "true", "status": 200, "total": 3, "data": [
+  {"product_id": 7422, "name": "Jack and Jones Jacquard Polo Olive", "status": "Active"},
+  {"product_id": 8093, "name": "Jack and Jones Jacquard Polo Olive", "status": "Active"},
+  {"product_id": 7423, "name": "Jack and Jones Jacquard Polo Wine", "status": "Active"}
+]}

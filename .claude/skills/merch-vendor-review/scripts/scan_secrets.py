@@ -26,6 +26,7 @@ PATTERNS = {
     "Private key block": re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     "Credential in URL": re.compile(r"https?://[^\s/:@]+:([^\s/@]{6,})@"),
 }
+CODE_REF = re.compile(r"^[A-Za-z_$][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$")  # creds.clientSecret
 PLACEHOLDER = re.compile(r"(?i)^(x+|\*+|<.*>|\{\{.*\}\}|your|example|placeholder|changeme|test)")
 
 
@@ -53,7 +54,7 @@ def scan(text):
     found = []
     for m in LABELED.finditer(text):
         value = m.group(2)
-        if not PLACEHOLDER.match(value) and ".." not in value:  # "eyJhbGci..." = truncated sample
+        if not PLACEHOLDER.match(value) and ".." not in value and not CODE_REF.match(value):  # "eyJhbGci..." = truncated sample
             found.append((m.group(1).strip(), redact(value)))
     for name, rx in PATTERNS.items():
         for m in rx.finditer(text):
