@@ -1,0 +1,96 @@
+{
+  "vendor_name": "JustLounge (Magento 2 Catalog API)",
+  "reviewed_on": "2026-10-17",
+  "doc_sources": [
+    "Justlounge_Magento_2_Catalog_API_information.pdf (2 pages, Google Docs export, title 'Justlounge.com Magento 2 Catalog Data API'), including 2 embedded Postman screenshots"
+  ],
+  "answers": {
+    "DOC-01": {"provided": "No", "details": "Doc covers only 2 catalogue GETs (category-wise products, all products). No order, status, tracking, returns or reconciliation endpoint anywhere."},
+    "DOC-02": {"provided": "No", "details": "No request/response examples in text; only Postman screenshots cut off at line 15 of the response (extension_attributes.website_ids)."},
+    "DOC-03": {"provided": "No", "details": "Response shows status: 1, visibility: 4, type_id: simple, attribute_set_id: 4 with no explanation of values."},
+    "DOC-04": {"provided": "No", "details": "No date, version or owner in the doc. PDF metadata only gives the title."},
+
+    "AUTH-01": {"provided": "Open", "details": "OAuth 1.0 with HMAC-SHA1 and four values (consumer key/secret, access token/secret) stated. Where the OAuth params go (Authorization header vs URL) is not stated; the Postman screenshot uses 'Request Body / Request URL'."},
+    "AUTH-02": {"provided": "Open", "details": "A pre-issued access token is handed over; its lifetime is not stated. A Postman tab 'Get Token Based on OA...' is visible in the screenshot but not documented."},
+    "AUTH-03": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No staging credentials; production not called."},
+    "AUTH-04": {"live": "Not run", "live_notes": "No staging credentials; production not called."},
+    "AUTH-05": {"provided": "Yes", "details": "Signing is standard OAuth 1.0 (RFC 5849) HMAC-SHA1, named on both pages; Postman screenshots show the exact configuration producing 200 OK."},
+    "AUTH-06": {"provided": "Not available", "details": ""},
+    "AUTH-07": {"provided": "Not available", "details": ""},
+
+    "ENV-01": {"provided": "Not available", "details": "Only https://justlounge.com (the live storefront) is given. No sandbox/staging URL or separate credentials.", "live": "Not run", "live_notes": "No staging environment exists in the doc."},
+    "ENV-02": {"provided": "Not available", "details": ""},
+    "ENV-03": {"provided": "Not available", "details": ""},
+    "ENV-04": {"provided": "Not available", "details": ""},
+    "ENV-05": {"provided": "Not available", "details": "No country or currency stated anywhere; price field has no currency."},
+    "ENV-06": {"provided": "Not available", "details": ""},
+
+    "CAT-01": {"provided": "Yes", "details": "GET /rest/V1/products with searchCriteria filter on category_id (example category 23); GET /rest/V1/products?searchCriteria[pageSize]=10 for all products.", "live": "Not run", "live_notes": "Vendor screenshots show 200 OK (766 ms, 37.32 KB) on PRODUCTION; we did not call production and no staging exists."},
+    "CAT-02": {"provided": "Open", "details": "Only searchCriteria[pageSize]=10 is shown. Page selection (currentPage) and the end-of-list signal (total_count) are not documented.", "live": "Not run", "live_notes": "Not verified."},
+    "CAT-03": {"provided": "Open", "details": "Each item has id and sku (e.g. FR25846371H), but there is no order API, so we cannot confirm the sku is what an order would take.", "live": "Not run", "live_notes": "No order API to test against."},
+    "CAT-04": {"provided": "Open", "details": "Visible: id, sku, name, price, status, type_id, created_at, updated_at. Not shown: currency, image, description, brand (screenshot truncated)."},
+    "CAT-05": {"provided": "Not available", "details": "Only a type_id 'simple' item is shown; configurable products/variants not described."},
+    "CAT-06": {"provided": "Not available", "details": "No stock field or stock endpoint documented.", "live": "Not run", "live_notes": "Not verified."},
+    "CAT-07": {"provided": "Not available", "details": ""},
+    "CAT-08": {"provided": "Not available", "details": ""},
+    "CAT-09": {"live": "Not run", "live_notes": "Not verified."},
+    "CAT-10": {"provided": "Not available", "details": ""},
+    "CAT-11": {"provided": "Yes", "details": "Each SKU carries a single fixed price (e.g. price: 910). Fixed price per SKU."},
+    "CAT-12": {"provided": "Open", "details": "Category filtering by category_id exists; per-product category, T&C, usage and country fields not shown."},
+    "CAT-13": {"provided": "Not available", "details": ""},
+    "CAT-14": {"provided": "Not available", "details": ""},
+    "CAT-15": {"provided": "Not available", "details": "updated_at is present on items, but filtering by it is not documented."},
+    "CAT-16": {"provided": "Not available", "details": "Brand, image and description attribute codes are not listed."},
+
+    "PRC-01": {"provided": "Not available", "details": "price 910 shown with no statement whether it is our buy price, retail price, tax-inclusive, or includes shipping."},
+    "PRC-02": {"provided": "Not available", "details": "No currency code in the response or doc."},
+    "PRC-03": {"provided": "Not available", "details": ""},
+    "PRC-04": {"provided": "Not available", "details": ""},
+    "BAL-01": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "BAL-02": {"provided": "Not available", "details": ""},
+    "BAL-03": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "BAL-04": {"provided": "Not available", "details": ""},
+
+    "ORD-01": {"provided": "Not available", "details": "No order endpoint documented.", "live": "Not run", "live_notes": "No endpoint."},
+    "ORD-02": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "ORD-03": {"provided": "Not available", "details": ""},
+    "ORD-04": {"provided": "Not available", "details": ""},
+    "ORD-05": {"provided": "Not available", "details": "No address schema."},
+    "ORD-11": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "ORD-12": {"live": "Not run", "live_notes": "No endpoint."},
+    "ORD-13": {"provided": "Not available", "details": ""},
+    "ORD-14": {"provided": "Not available", "details": "No serviceability/pincode check.", "live": "Not run", "live_notes": "No endpoint."},
+
+    "IDM-01": {"provided": "Not available", "details": ""},
+    "IDM-02": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "IDM-03": {"provided": "Not available", "details": ""},
+    "IDM-05": {"live": "Not run", "live_notes": "No endpoint."},
+
+    "STS-01": {"provided": "Not available", "details": "No order status values documented."},
+    "STS-02": {"provided": "Not available", "details": "Cannot build a status map."},
+    "STS-03": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "STS-08": {"live": "Not run", "live_notes": "No endpoint."},
+
+    "WHK-01": {"provided": "Not available", "details": ""},
+    "POL-01": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "TRK-01": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "No endpoint."},
+    "RTN-03": {"provided": "Not available", "details": ""},
+    "REC-01": {"provided": "Not available", "details": ""},
+    "REC-02": {"provided": "Not available", "details": ""},
+
+    "ERR-01": {"provided": "Not available", "details": "No error responses documented."},
+    "ERR-02": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "Not verified."},
+    "ERR-03": {"provided": "Not available", "details": "", "live": "Not run", "live_notes": "Not verified."},
+
+    "SEC-01": {"provided": "Yes", "details": "Both endpoints are https://justlounge.com/rest/V1/...", "live": "Not run", "live_notes": "Not verified."},
+    "SEC-03": {"provided": "Open", "details": "OAuth 1.0 parameters may be sent in the URL (screenshot setting 'Request Body / Request URL'); header-only not stated."},
+    "SEC-05": {"provided": "Not available", "details": ""},
+    "SEC-07": {"provided": "No", "details": "The PDF and both screenshots contain all four live OAuth values (consumer key/secret, access token/secret) in plain text for the production store. Found by scan_secrets.py; values deliberately not reproduced here."},
+    "SEC-08": {"provided": "Not available", "details": "Scope of the Magento integration user is not stated. A Magento integration token can carry admin-level resource access."},
+
+    "SUP-01": {"provided": "Not available", "details": ""},
+    "SUP-03": {"provided": "Open", "details": "Paths use Magento /rest/V1/ versioning; no deprecation policy stated."},
+    "SUP-05": {"provided": "Open", "details": "Postman was used (screenshots of workspace 'RESTful API Basics #blueprint'), but the collection itself was not shared."}
+  },
+  "status_map": {}
+}

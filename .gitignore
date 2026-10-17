@@ -1,0 +1,11 @@
+# Vendor docs, credentials and review outputs never go into git
+reviews/
+*.postman_environment.json
+*.env.json
+.env
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+.DS_Store
