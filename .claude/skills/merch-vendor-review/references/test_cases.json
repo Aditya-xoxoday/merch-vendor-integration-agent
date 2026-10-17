@@ -1,175 +1,12 @@
 {
  "category": "Merchandise",
- "version": "2.1",
- "notes": "Every test is phrased so that 'Yes' means the vendor is compatible with Plum. 'legacy' lists the v1 41-question ids this test replaces. 'risk' = a 'No' or 'Open' here needs an engineering escalation (platform/base-class gap), not just a vendor question. 'platform' says which part of the Xoxoday merchandise stack (see /merch-sensei) consumes the answer.",
- "priority_weights": {
-  "P0": 3,
-  "P1": 2,
-  "P2": 1
- },
- "gate": [
-  {
-   "item": "Order placement contract is complete: documented request schema, vendor order id in the response, sync/async behaviour stated, and the address schema maps to our shipping fields.",
-   "all": [
-    "ORD-01",
-    "ORD-02",
-    "ORD-04",
-    "ORD-05"
-   ]
-  },
-  {
-   "item": "Orders are idempotent: our reference is accepted, a duplicate never creates a second order, and a timed-out order can be looked up by our reference.",
-   "all": [
-    "IDM-01",
-    "IDM-02",
-    "IDM-03"
-   ]
-  },
-  {
-   "item": "Order status is complete and mappable: enumerated statuses, every one maps to our six delivery statuses, an order-details lookup exists, and updates arrive by webhook or polling.",
-   "all": [
-    "STS-01",
-    "STS-02",
-    "STS-03"
-   ],
-   "any": [
-    "WHK-01",
-    "POL-01"
-   ],
-   "status_map": true
-  },
-  {
-   "item": "Shipment tracking (carrier plus tracking number or URL) is returned via API after dispatch.",
-   "all": [
-    "TRK-01"
-   ]
-  },
-  {
-   "item": "Serviceability of the regions/pincodes we need is confirmed, with documented behaviour for non-serviceable addresses.",
-   "all": [
-    "ORD-14"
-   ]
-  },
-  {
-   "item": "A returns, replacement or refund path exists for damaged, wrong or undelivered items.",
-   "all": [
-    "RTN-03"
-   ]
-  },
-  {
-   "item": "A reconciliation source of truth exists that carries our reference per line.",
-   "all": [
-    "REC-01",
-    "REC-02"
-   ]
-  },
-  {
-   "item": "Catalogue identifiers are stable and accepted unchanged by Place Order.",
-   "all": [
-    "CAT-03"
-   ]
-  },
-  {
-   "item": "Transport and authentication are secure and documented.",
-   "all": [
-    "SEC-01",
-    "AUTH-01"
-   ]
-  }
- ],
- "feasibility": {
-  "AUTH": [
-   "AUTH-01",
-   "AUTH-02",
-   "AUTH-03",
-   "AUTH-04"
-  ],
-  "ORDER": [
-   "ORD-01",
-   "ORD-02",
-   "ORD-03",
-   "ORD-04",
-   "ORD-11",
-   "ORD-12"
-  ],
-  "IDEMPOTENCY": [
-   "IDM-01",
-   "IDM-02",
-   "IDM-03",
-   "IDM-05"
-  ],
-  "ADDRESS": [
-   "ORD-05",
-   "ORD-06",
-   "ORD-07",
-   "ORD-08",
-   "ORD-14",
-   "ORD-15"
-  ],
-  "STATUS MAP": [
-   "STS-01",
-   "STS-02",
-   "STS-05"
-  ],
-  "WEBHOOK": [
-   "WHK-01",
-   "WHK-02",
-   "WHK-03",
-   "WHK-04",
-   "WHK-05",
-   "WHK-06"
-  ],
-  "POLLING": [
-   "POL-01",
-   "POL-02",
-   "POL-04"
-  ],
-  "PRE-CONFIRM FAIL": [
-   "ORD-13"
-  ],
-  "TRACKING": [
-   "TRK-01",
-   "TRK-02",
-   "TRK-04"
-  ],
-  "CANCEL/RETURNS": [
-   "RTN-01",
-   "RTN-03",
-   "RTN-04"
-  ],
-  "CATALOG": [
-   "CAT-01",
-   "CAT-02",
-   "CAT-03",
-   "CAT-04",
-   "CAT-09"
-  ],
-  "BALANCE": [
-   "BAL-01",
-   "BAL-03"
-  ],
-  "RECON": [
-   "REC-01",
-   "REC-02",
-   "REC-05"
-  ],
-  "DOCS": [
-   "DOC-01",
-   "DOC-02",
-   "DOC-03"
-  ],
-  "SECURITY": [
-   "SEC-01",
-   "SEC-03",
-   "SEC-07",
-   "SEC-08"
-  ]
- },
+ "version": "3.0",
+ "notes": "Every check is worded so that 'Yes' means the vendor works for us. 'need' says how much it matters: Must-have checks decide whether we can integrate at all; Important and Nice-to-have checks are listed as gaps but never block. 'risk' = a No or Open here needs a change on our side before building. 'platform' is a short technical note for the build team. 'legacy' maps back to the original 41-question review.",
  "tests": [
   {
    "id": "DOC-01",
    "section": "Documentation Quality",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "The documentation covers the full order lifecycle the integration needs: catalogue, place order, order status/details, tracking and reconciliation. A catalogue-only doc fails.",
    "pass": "Every lifecycle stage has at least one documented endpoint.",
@@ -178,7 +15,7 @@
   {
    "id": "DOC-02",
    "section": "Documentation Quality",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Every endpoint has a complete request and response example, not a truncated screenshot.",
    "pass": "Full JSON examples per endpoint.",
@@ -187,7 +24,7 @@
   {
    "id": "DOC-03",
    "section": "Documentation Quality",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Enumerated and coded fields are explained (for example status 1/2, visibility 1-4, type_id values).",
    "pass": "Each enum value has a meaning.",
@@ -196,7 +33,7 @@
   {
    "id": "DOC-04",
    "section": "Documentation Quality",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "The document is dated, versioned and names an owner.",
    "pass": "Date, version and owner present.",
@@ -205,43 +42,43 @@
   {
    "id": "AUTH-01",
    "section": "Access & Authentication",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
-   "legacy": [
-    1
-   ],
    "test": "Authentication method is documented (API key, Basic, OAuth2, HMAC, JWT or session) with the exact header name, format and an example request.",
    "pass": "Method, header name/format and a sample authenticated request are all present.",
-   "platform": "getReqHeaders(). Custom header names must be added to vendorCallLogger.mongo.redactHeaders or credentials leak into Mongo logs."
+   "platform": "getReqHeaders(). Custom header names must be added to vendorCallLogger.mongo.redactHeaders or credentials leak into Mongo logs.",
+   "legacy": [
+    1
+   ]
   },
   {
    "id": "AUTH-02",
    "section": "Access & Authentication",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    1
-   ],
    "test": "For token auth: token endpoint, grant type, request body and token lifetime (expiry field) are documented and work on staging. NA for static keys.",
    "pass": "Token call returns a token plus an expiry value; TTL is stated.",
-   "platform": "fetchAccessToken() + /vendor/updateAccessToken scheduler; token stored in the tokens table."
+   "platform": "fetchAccessToken() + /vendor/updateAccessToken scheduler; token stored in the tokens table.",
+   "legacy": [
+    1
+   ]
   },
   {
    "id": "AUTH-03",
    "section": "Access & Authentication",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    1
-   ],
    "test": "Expired or revoked token response is documented (401, 403 or a custom code) and refresh behaviour is stated.",
    "pass": "Specific status/code for expiry is documented and reproduced on staging.",
-   "platform": "errorHandler() and the token refresh scheduler cadence."
+   "platform": "errorHandler() and the token refresh scheduler cadence.",
+   "legacy": [
+    1
+   ]
   },
   {
    "id": "AUTH-04",
    "section": "Access & Authentication",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Live",
    "test": "Invalid credentials return a documented error (4xx JSON), not 200 with an error body or an HTML page.",
    "pass": "Bad key/secret gives 401/403 with JSON error body.",
@@ -250,7 +87,7 @@
   {
    "id": "AUTH-05",
    "section": "Access & Authentication",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "If requests are signed (HMAC), the algorithm, exact string-to-sign, timestamp/nonce tolerance and a worked example are documented. NA if not used.",
    "pass": "A worked example lets us reproduce the signature byte for byte.",
@@ -259,7 +96,7 @@
   {
    "id": "AUTH-06",
    "section": "Access & Authentication",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Credential rotation process is documented, ideally with two keys valid at once for zero-downtime rotation.",
    "pass": "Rotation steps and overlap window stated.",
@@ -268,45 +105,45 @@
   {
    "id": "AUTH-07",
    "section": "Access & Authentication",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    3
-   ],
    "test": "IP allowlisting requirement (if any) and how to submit our egress IPs per environment are documented.",
    "pass": "Requirement stated either way; process given if required.",
-   "platform": "Infra request before staging run."
+   "platform": "Infra request before staging run.",
+   "legacy": [
+    3
+   ]
   },
   {
    "id": "ENV-01",
    "section": "Environments & Onboarding",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
+   "test": "Separate staging/sandbox and production base URLs and credentials exist and are clearly separated.",
+   "pass": "Both base URLs listed; staging reachable with staging credentials.",
+   "platform": "configs.baseUrl in src/configs/vendorConfigs/{ClassName}.json per env.",
    "legacy": [
     2,
     4
-   ],
-   "test": "Separate staging/sandbox and production base URLs and credentials exist and are clearly separated.",
-   "pass": "Both base URLs listed; staging reachable with staging credentials.",
-   "platform": "configs.baseUrl in src/configs/vendorConfigs/{ClassName}.json per env."
+   ]
   },
   {
    "id": "ENV-02",
    "section": "Environments & Onboarding",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
+   "test": "Sandbox catalogue is representative of production (same fields, comparable products and pricing), and test products are listed.",
+   "pass": "Parity stated or differences documented; test SKUs given.",
+   "platform": "Contract test fixtures and smoke test.",
    "legacy": [
     2,
     9
-   ],
-   "test": "Sandbox catalogue is representative of production (same fields, comparable products and pricing), and test products are listed.",
-   "pass": "Parity stated or differences documented; test SKUs given.",
-   "platform": "Contract test fixtures and smoke test."
+   ]
   },
   {
    "id": "ENV-03",
    "section": "Environments & Onboarding",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Sandbox can drive an order through every lifecycle status (confirm, ship, deliver, cancel, return) or trigger test webhooks.",
    "pass": "A documented way to move test orders between statuses.",
@@ -315,19 +152,19 @@
   {
    "id": "ENV-04",
    "section": "Environments & Onboarding",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    3
-   ],
    "test": "Onboarding prerequisites (contract, KYB, deposit) and lead time to production keys are documented.",
    "pass": "Steps and timeline stated.",
-   "platform": "Project plan only."
+   "platform": "Project plan only.",
+   "legacy": [
+    3
+   ]
   },
   {
    "id": "ENV-05",
    "section": "Environments & Onboarding",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Supported countries and currencies are listed.",
    "pass": "Explicit list.",
@@ -336,7 +173,7 @@
   {
    "id": "ENV-06",
    "section": "Environments & Onboarding",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Sandbox/test orders are never physically shipped or billed, and the way to mark or cancel a test order in production is documented.",
    "pass": "Explicit statement.",
@@ -345,19 +182,19 @@
   {
    "id": "CAT-01",
    "section": "Catalogue & Product Sync",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    5
-   ],
    "test": "A product list endpoint exists with method, path and filter parameters (country, category, currency).",
    "pass": "Endpoint documented and returns products on staging.",
-   "platform": "productListingConfigs + getVendorProducts(); without it products are created manually in karma."
+   "platform": "productListingConfigs + getVendorProducts(); without it products are created manually in karma.",
+   "legacy": [
+    5
+   ]
   },
   {
    "id": "CAT-02",
    "section": "Catalogue & Product Sync",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
    "test": "Pagination method (page, offset or cursor) is documented with a reliable end-of-list signal (total count or next cursor).",
    "pass": "We can loop every page and know when we are done.",
@@ -366,7 +203,7 @@
   {
    "id": "CAT-03",
    "section": "Catalogue & Product Sync",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
    "test": "Each sellable item has a stable unique identifier (SKU or variant id) that Place Order accepts unchanged.",
    "pass": "The id in the catalogue response is the id in the order request; it does not change between syncs.",
@@ -375,7 +212,7 @@
   {
    "id": "CAT-04",
    "section": "Catalogue & Product Sync",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "Product response schema documents name, price, currency, image, description, brand and an active flag with its active value.",
    "pass": "All fields named with types.",
@@ -384,19 +221,19 @@
   {
    "id": "CAT-05",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    31
-   ],
    "test": "Variants (size, colour) structure is documented and it is clear which ids the order API needs for a variant.",
    "pass": "Variant nesting and the order-time variant id are explicit. NA if no variants.",
-   "platform": "formatProductResponse(): one sku per variant, reversible."
+   "platform": "formatProductResponse(): one sku per variant, reversible.",
+   "legacy": [
+    31
+   ]
   },
   {
    "id": "CAT-06",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc+Live",
    "test": "Stock or availability is returned per item/variant, or a stock-check endpoint exists.",
    "pass": "Stock field or endpoint documented and returned on staging.",
@@ -405,31 +242,31 @@
   {
    "id": "CAT-07",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    7
-   ],
    "test": "Availability freshness is stated, and an out-of-stock-at-order-time failure has its own documented error.",
    "pass": "Freshness stated and a specific OOS error code exists.",
-   "platform": "errorHandler(); order fails cleanly instead of later cancellation."
+   "platform": "errorHandler(); order fails cleanly instead of later cancellation.",
+   "legacy": [
+    7
+   ]
   },
   {
    "id": "CAT-08",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    8
-   ],
    "test": "Catalogue changes (new items, delistings, price changes) are pushed by webhook, or the recommended polling frequency is stated.",
    "pass": "Either a product webhook or a stated sync cadence.",
-   "platform": "plumAuth /webhook/productUpdate (status == 2 disables) or the /vendor/sync_products scheduler."
+   "platform": "plumAuth /webhook/productUpdate (status == 2 disables) or the /vendor/sync_products scheduler.",
+   "legacy": [
+    8
+   ]
   },
   {
    "id": "CAT-09",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Live",
    "test": "A failing catalogue page returns a non-2xx status, never an empty 200 that looks like the end of the list.",
    "pass": "Forced failure (bad page or auth) returns an error status.",
@@ -438,7 +275,7 @@
   {
    "id": "CAT-10",
    "section": "Catalogue & Product Sync",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Catalogue size and maximum page size are stated.",
    "pass": "Numbers given.",
@@ -447,7 +284,7 @@
   {
    "id": "CAT-11",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Pricing model is stated: fixed price per SKU or open amount.",
    "pass": "Explicit.",
@@ -456,7 +293,7 @@
   {
    "id": "CAT-12",
    "section": "Catalogue & Product Sync",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Category, warranty/T&C, usage notes and country of availability are provided per product.",
    "pass": "Fields present or explicitly absent.",
@@ -465,7 +302,7 @@
   {
    "id": "CAT-13",
    "section": "Catalogue & Product Sync",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Image URLs are HTTPS, stable and publicly reachable (no expiring signed URLs).",
    "pass": "Stated or verified.",
@@ -474,7 +311,7 @@
   {
    "id": "CAT-14",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Per-product order constraints are documented: max quantity, mandatory recipient fields (phone, email), region restrictions.",
    "pass": "Constraints listed per product or globally.",
@@ -483,7 +320,7 @@
   {
    "id": "CAT-15",
    "section": "Catalogue & Product Sync",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Incremental sync is supported (filter by updated_at or a changes feed).",
    "pass": "Filter or feed documented.",
@@ -492,7 +329,7 @@
   {
    "id": "CAT-16",
    "section": "Catalogue & Product Sync",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Custom attributes (brand, image, description, category) are mapped to named fields, or the attribute codes to read are listed.",
    "pass": "Attribute codes listed.",
@@ -501,7 +338,7 @@
   {
    "id": "PRC-01",
    "section": "Pricing, Currency & Balance",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "The catalogue price is the amount we are charged, or the breakdown (tax, shipping, handling, discount) is documented.",
    "pass": "Landed cost is computable from the API.",
@@ -510,19 +347,19 @@
   {
    "id": "PRC-02",
    "section": "Pricing, Currency & Balance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    6
-   ],
    "test": "Currency codes are ISO 4217 and map to our wallet currency without manual conversion.",
    "pass": "ISO codes and billing currency stated.",
-   "platform": "OPM00073/74/76/77 currency mismatch errors."
+   "platform": "OPM00073/74/76/77 currency mismatch errors.",
+   "legacy": [
+    6
+   ]
   },
   {
    "id": "PRC-03",
    "section": "Pricing, Currency & Balance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Price change policy is stated: notice period, and what happens if the price changed between sync and order (reject, or charge new price).",
    "pass": "Behaviour explicit.",
@@ -531,55 +368,55 @@
   {
    "id": "PRC-04",
    "section": "Pricing, Currency & Balance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    34
-   ],
    "test": "Shipping charges and taxes (GST/VAT) per order are documented: included in price or charged separately per region.",
    "pass": "Explicit rule per region.",
-   "platform": "Landed cost and reconciliation."
+   "platform": "Landed cost and reconciliation.",
+   "legacy": [
+    34
+   ]
   },
   {
    "id": "BAL-01",
    "section": "Pricing, Currency & Balance",
-   "priority": "P1",
+   "need": "Nice-to-have",
    "verify": "Doc+Live",
+   "test": "A balance endpoint exists and returns the real-time prepaid balance. Not needed to integrate. NA if the account is postpaid/credit.",
+   "pass": "Endpoint returns balance and currency on staging.",
+   "platform": "karma_reports vendorBalance/vendors/{vendorName}Balance.js (merch-sensei Phase 3B).",
    "legacy": [
     10
-   ],
-   "test": "A balance endpoint exists and returns the real-time prepaid balance. NA if the account is postpaid/credit.",
-   "pass": "Endpoint returns balance and currency on staging.",
-   "platform": "karma_reports vendorBalance/vendors/{vendorName}Balance.js (merch-sensei Phase 3B)."
+   ]
   },
   {
    "id": "BAL-02",
    "section": "Pricing, Currency & Balance",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    11
-   ],
    "test": "Balance scope (global vs per currency/market) is stated and matches how we fund the account.",
    "pass": "Scope stated.",
-   "platform": "Balance module returns vendorData per currency."
+   "platform": "Balance module returns vendorData per currency.",
+   "legacy": [
+    11
+   ]
   },
   {
    "id": "BAL-03",
    "section": "Pricing, Currency & Balance",
-   "priority": "P1",
+   "need": "Nice-to-have",
    "verify": "Doc+Live",
-   "legacy": [
-    12
-   ],
    "test": "An order with insufficient balance is rejected up front with a specific documented error, before any fulfilment.",
    "pass": "Distinct error code; no order created.",
-   "platform": "errorHandler(); OPMS retry logic."
+   "platform": "errorHandler(); OPMS retry logic.",
+   "legacy": [
+    12
+   ]
   },
   {
    "id": "BAL-04",
    "section": "Pricing, Currency & Balance",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Funding model (prepaid, credit line, invoice) and low-balance alerts are documented.",
    "pass": "Stated.",
@@ -588,16 +425,16 @@
   {
    "id": "ORD-01",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
-   "test": "Place Order is documented with method, path and the full request schema: required/optional flags, types and max lengths.",
-   "pass": "Schema complete and a staging order succeeds using only the docs.",
+   "test": "Place Order is documented: method, path, and the request fields with required/optional flags and types.",
+   "pass": "Endpoint and request fields documented; a sandbox order succeeds using only the docs.",
    "platform": "placeOrderReqConfigs / getPlaceOrderReqOptions()."
   },
   {
    "id": "ORD-02",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
    "test": "A successful order response contains the vendor order id in a named field.",
    "pass": "Field named in docs and present on staging.",
@@ -606,19 +443,19 @@
   {
    "id": "ORD-03",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    15
-   ],
    "test": "The full success response schema is documented (every field we must store), not only a happy-path example.",
    "pass": "Field list with types.",
-   "platform": "merchandise_vendor_order_details row."
+   "platform": "merchandise_vendor_order_details row.",
+   "legacy": [
+    15
+   ]
   },
   {
    "id": "ORD-04",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "Sync vs async is stated: is the order confirmed in the response, or pending and confirmed later by webhook/poll?",
    "pass": "Explicit statement.",
@@ -627,7 +464,7 @@
   {
    "id": "ORD-05",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
    "test": "Every vendor-required address/recipient field can be filled from our shipping fields (first/last name, address 1/2, city, state/zone, country, postcode, contact number, email).",
    "pass": "Field-by-field mapping has no gaps.",
@@ -636,7 +473,7 @@
   {
    "id": "ORD-06",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Formats are stated for country (ISO2/ISO3/name), state (code/name), phone (E.164 or local) and postcode.",
    "pass": "All four formats stated.",
@@ -645,7 +482,7 @@
   {
    "id": "ORD-07",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Max length per address field and the behaviour on overflow (truncate or reject) are documented.",
    "pass": "Limits and behaviour stated.",
@@ -654,7 +491,7 @@
   {
    "id": "ORD-08",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Optional fields are stated: empty last name, empty address line 2, optional email.",
    "pass": "Optionality explicit per field.",
@@ -663,19 +500,19 @@
   {
    "id": "ORD-09",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    18
-   ],
    "test": "Quantity > 1 and multi-line orders are documented, including whether the vendor order id is per order or per line.",
    "pass": "Explicit.",
-   "platform": "maxCardsPerRequest; one order_product per vendor call."
+   "platform": "maxCardsPerRequest; one order_product per vendor call.",
+   "legacy": [
+    18
+   ]
   },
   {
    "id": "ORD-10",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Recipient communications are documented: whether the vendor emails/SMSes the recipient, and if it can be disabled or white-labelled.",
    "pass": "Behaviour and controls stated.",
@@ -684,65 +521,65 @@
   {
    "id": "ORD-11",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    14
-   ],
    "test": "Maximum synchronous response time is documented and is 120 seconds or less; slower processing is async.",
    "pass": "Stated limit <= 120s and observed on staging.",
-   "platform": "OPMS -> VI procure timeout."
+   "platform": "OPMS -> VI procure timeout.",
+   "legacy": [
+    14
+   ]
   },
   {
    "id": "ORD-12",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Live",
-   "legacy": [
-    16
-   ],
    "test": "Invalid SKU, out-of-stock item and invalid address each return a distinct documented error.",
    "pass": "Three negative calls, three distinct codes.",
-   "platform": "errorHandler() mapping to OPM000xx."
+   "platform": "errorHandler() mapping to OPM000xx.",
+   "legacy": [
+    16
+   ]
   },
   {
    "id": "ORD-13",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "risk": true,
    "test": "It is stated whether an accepted order can later fail BEFORE confirmation, and how that is signalled. Yes = it cannot, or it is signalled as a cancel status.",
    "pass": "Pre-confirmation failure path is explicit and maps to CANCELED.",
-   "platform": "Async pre-confirm failure is a base-class gap: escalate before building."
+   "platform": "Async pre-confirm failure has no handling on our side: needs a change before building.",
+   "risk": true
   },
   {
    "id": "ORD-14",
    "section": "Order Placement & Address",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    30
-   ],
    "test": "Serviceability is checkable before or at order time (pincode check endpoint or immediate rejection), and the regions we need are covered.",
    "pass": "Serviceability check documented; our target pincodes confirmed.",
-   "platform": "Avoid post-placement failures and refunds."
+   "platform": "Avoid post-placement failures and refunds.",
+   "legacy": [
+    30
+   ]
   },
   {
    "id": "ORD-15",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    33
-   ],
    "test": "Responsibility for address validation is stated (vendor validates vs our responsibility), with the error returned for a bad address.",
    "pass": "Explicit.",
-   "platform": "Frontend/address capture validation."
+   "platform": "Frontend/address capture validation.",
+   "legacy": [
+    33
+   ]
   },
   {
    "id": "ORD-16",
    "section": "Order Placement & Address",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Gift handling is supported: price-free packing slip/invoice, gift message.",
    "pass": "Stated.",
@@ -751,7 +588,7 @@
   {
    "id": "ORD-17",
    "section": "Order Placement & Address",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Address or recipient changes after placement are supported or explicitly not supported.",
    "pass": "Stated.",
@@ -760,7 +597,7 @@
   {
    "id": "ORD-18",
    "section": "Order Placement & Address",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Peak volume capacity is stated (orders per day/hour for bulk reward campaigns).",
    "pass": "Capacity stated.",
@@ -769,19 +606,19 @@
   {
    "id": "IDM-01",
    "section": "Idempotency & Duplicates",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
-   "legacy": [
-    13
-   ],
    "test": "A client reference (PO number) field is accepted on Place Order and returned in order details, webhooks and reports.",
    "pass": "Field named and echoed everywhere.",
-   "platform": "externalOrderId = voucher_insert_id; webhook lookup by insert_id."
+   "platform": "externalOrderId = voucher_insert_id; webhook lookup by insert_id.",
+   "legacy": [
+    13
+   ]
   },
   {
    "id": "IDM-02",
    "section": "Idempotency & Duplicates",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
    "test": "Re-sending the same reference never creates a second order; it returns the original order or a specific duplicate error.",
    "pass": "Documented and reproduced on staging.",
@@ -790,19 +627,19 @@
   {
    "id": "IDM-03",
    "section": "Idempotency & Duplicates",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
-   "legacy": [
-    21
-   ],
    "test": "After a timeout or 5xx on Place Order, a documented way exists to check if the order was created (lookup by our reference) before retrying.",
    "pass": "Lookup-by-reference endpoint documented.",
-   "platform": "getRefetchOrderReqOptions() using externalOrderId."
+   "platform": "getRefetchOrderReqOptions() using externalOrderId.",
+   "legacy": [
+    21
+   ]
   },
   {
    "id": "IDM-04",
    "section": "Idempotency & Duplicates",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Reference constraints are stated: uniqueness scope (account/global, time window), max length and allowed characters.",
    "pass": "Constraints stated and compatible with our numeric ids.",
@@ -811,7 +648,7 @@
   {
    "id": "IDM-05",
    "section": "Idempotency & Duplicates",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Live",
    "test": "An order is retrievable by our reference immediately after placement (or the consistency delay is documented).",
    "pass": "Lookup right after create returns the order.",
@@ -820,7 +657,7 @@
   {
    "id": "STS-01",
    "section": "Order Status & Lifecycle",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
    "test": "The complete list of order status values is documented with the meaning of each.",
    "pass": "Enumerated list, not just examples.",
@@ -829,7 +666,7 @@
   {
    "id": "STS-02",
    "section": "Order Status & Lifecycle",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "Every vendor status maps unambiguously to PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELED or RETURNED (failed/rejected -> CANCELED).",
    "pass": "status_map in answers covers every status with only these six targets.",
@@ -838,43 +675,43 @@
   {
    "id": "STS-03",
    "section": "Order Status & Lifecycle",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
-   "legacy": [
-    19
-   ],
    "test": "An order-details endpoint returns current status (and tracking) by vendor order id and/or our reference.",
    "pass": "Documented and works on staging.",
-   "platform": "refetchOrderReqConfigs; fetchTrackingDetailsFromVendor() (needed when cached tracking is older than 1 day)."
+   "platform": "refetchOrderReqConfigs; fetchTrackingDetailsFromVendor() (needed when cached tracking is older than 1 day).",
+   "legacy": [
+    19
+   ]
   },
   {
    "id": "STS-04",
    "section": "Order Status & Lifecycle",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    20
-   ],
    "test": "An order-history endpoint lists orders over a date range with pagination.",
    "pass": "Documented.",
-   "platform": "Reconciliation and bulk status recovery."
+   "platform": "Reconciliation and bulk status recovery.",
+   "legacy": [
+    20
+   ]
   },
   {
    "id": "STS-05",
    "section": "Order Status & Lifecycle",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    22
-   ],
    "test": "Terminal statuses are defined, and the maximum time an order can stay pending/processing (or an auto-cancel rule) is stated.",
    "pass": "Terminal set and SLA stated.",
-   "platform": "Polling loop picks rows with status NOT IN (3,5); stuck orders poll forever."
+   "platform": "Polling loop picks rows with status NOT IN (3,5); stuck orders poll forever.",
+   "legacy": [
+    22
+   ]
   },
   {
    "id": "STS-06",
    "section": "Order Status & Lifecycle",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Partial or split shipments are documented: line-level vs order-level status.",
    "pass": "Representation explicit.",
@@ -883,7 +720,7 @@
   {
    "id": "STS-07",
    "section": "Order Status & Lifecycle",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Allowed status transitions are documented, including whether a status can move backwards.",
    "pass": "State machine or transition list given.",
@@ -892,7 +729,7 @@
   {
    "id": "STS-08",
    "section": "Order Status & Lifecycle",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Live",
    "test": "An unknown order id returns a documented not-found response (404 or code), not a 500.",
    "pass": "Reproduced on staging.",
@@ -901,7 +738,7 @@
   {
    "id": "STS-09",
    "section": "Order Status & Lifecycle",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Dispatch and delivery timestamps are returned in a documented format and timezone.",
    "pass": "Format and timezone stated.",
@@ -910,19 +747,19 @@
   {
    "id": "WHK-01",
    "section": "Webhooks",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc",
+   "test": "Push status webhooks exist. (We need this or POL-01.)",
+   "pass": "Webhook documented.",
+   "platform": "plumAuth POST /webhook/orderUpdate/<vendorname-lowercase> -> VI webhookOrderStatusUpdate.",
    "legacy": [
     23
-   ],
-   "test": "Push status webhooks exist. (Gate needs this or POL-01.)",
-   "pass": "Webhook documented.",
-   "platform": "plumAuth POST /webhook/orderUpdate/<vendorname-lowercase> -> VI webhookOrderStatusUpdate."
+   ]
   },
   {
    "id": "WHK-02",
    "section": "Webhooks",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "A sample webhook payload is documented for each status event.",
    "pass": "Samples cover every status.",
@@ -931,7 +768,7 @@
   {
    "id": "WHK-03",
    "section": "Webhooks",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
    "test": "The webhook carries our reference and/or the vendor order id.",
    "pass": "Identifier field named.",
@@ -940,37 +777,37 @@
   {
    "id": "WHK-04",
    "section": "Webhooks",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "risk": true,
    "test": "Webhook is a JSON POST body. Note whether it has a top-level 'data' key.",
    "pass": "JSON body confirmed.",
-   "platform": "Non-JSON needs a dedicated plumAuth route (escalate). No top-level data -> add to api.integratedVendors.rawPayload."
+   "platform": "Non-JSON needs a dedicated plumAuth route (change on our side). No top-level data -> add to api.integratedVendors.rawPayload.",
+   "risk": true
   },
   {
    "id": "WHK-05",
    "section": "Webhooks",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "risk": true,
    "test": "Webhook authenticity does not depend on a vendor signature we must verify (unsigned, IP allowlist, or signing optional).",
-   "pass": "Yes = no mandatory signature. Mandatory signature = No (escalate).",
-   "platform": "Vendor-signed webhooks need escalation before building."
+   "pass": "Yes = no mandatory signature. Mandatory signature = No (change on our side).",
+   "platform": "Vendor-signed webhooks need a change on our side before building.",
+   "risk": true
   },
   {
    "id": "WHK-06",
    "section": "Webhooks",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "risk": true,
    "test": "Payload is plain, or encrypted with AES over base64 with a null IV (the only supported scheme).",
    "pass": "Plain or supported encryption.",
-   "platform": "webhookConfigs.isDataEncrypted / encryptedType / encryptedKey."
+   "platform": "webhookConfigs.isDataEncrypted / encryptedType / encryptedKey.",
+   "risk": true
   },
   {
    "id": "WHK-07",
    "section": "Webhooks",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Webhook URL registration is documented (self-serve or via vendor, per environment).",
    "pass": "Process stated.",
@@ -979,7 +816,7 @@
   {
    "id": "WHK-08",
    "section": "Webhooks",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Retry policy on non-2xx (count, backoff) and the response the vendor expects are documented.",
    "pass": "Stated.",
@@ -988,7 +825,7 @@
   {
    "id": "WHK-09",
    "section": "Webhooks",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Duplicate and out-of-order delivery is addressed (event id or event timestamp provided).",
    "pass": "Dedupe/ordering field present.",
@@ -997,7 +834,7 @@
   {
    "id": "WHK-10",
    "section": "Webhooks",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Webhook source IPs are published.",
    "pass": "IP list given.",
@@ -1006,7 +843,7 @@
   {
    "id": "WHK-11",
    "section": "Webhooks",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "The shipped event includes tracking fields (carrier, tracking number, tracking URL).",
    "pass": "Fields present in the shipped sample.",
@@ -1015,7 +852,7 @@
   {
    "id": "WHK-12",
    "section": "Webhooks",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Missed webhooks can be replayed or resent on request.",
    "pass": "Replay mechanism stated.",
@@ -1024,16 +861,16 @@
   {
    "id": "POL-01",
    "section": "Polling",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
-   "test": "A status endpoint is suitable for scheduled polling (single or bulk). (Gate needs this or WHK-01.)",
+   "test": "A status endpoint is suitable for scheduled polling (single or bulk). (We need this or WHK-01.)",
    "pass": "Documented and works on staging.",
    "platform": "/vendor/merchandiseOrderTracking scheduler; vendor id in merchandiseOrderTrackingVendorIds."
   },
   {
    "id": "POL-02",
    "section": "Polling",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "The status field name and response shape for polling are documented.",
    "pass": "Field named.",
@@ -1042,7 +879,7 @@
   {
    "id": "POL-03",
    "section": "Polling",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Allowed polling rate is stated, and a bulk status endpoint exists for many orders.",
    "pass": "Rate stated; bulk available or volume acceptable.",
@@ -1051,7 +888,7 @@
   {
    "id": "POL-04",
    "section": "Polling",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Polling and webhook payloads share a shape, or both shapes are documented.",
    "pass": "Shapes documented.",
@@ -1060,19 +897,19 @@
   {
    "id": "TRK-01",
    "section": "Shipment Tracking",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
-   "legacy": [
-    28
-   ],
    "test": "Carrier name and tracking number are returned via API after dispatch (not only on a portal or email).",
    "pass": "Fields documented and present on a staging shipped order.",
-   "platform": "trackingId, courier_name -> courier_tracking."
+   "platform": "trackingId, courier_name -> courier_tracking.",
+   "legacy": [
+    28
+   ]
   },
   {
    "id": "TRK-02",
    "section": "Shipment Tracking",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "A per-order customer tracking URL is returned.",
    "pass": "Field present.",
@@ -1081,7 +918,7 @@
   {
    "id": "TRK-03",
    "section": "Shipment Tracking",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Estimated delivery date is returned.",
    "pass": "Field present.",
@@ -1090,7 +927,7 @@
   {
    "id": "TRK-04",
    "section": "Shipment Tracking",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Multi-package shipments are represented (multiple tracking numbers, package/shipment ids).",
    "pass": "Structure documented. NA if always single package.",
@@ -1099,19 +936,19 @@
   {
    "id": "TRK-05",
    "section": "Shipment Tracking",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    29
-   ],
    "test": "Shipping SLA (days to dispatch, days to deliver) is documented per region.",
    "pass": "SLA table.",
-   "platform": "Customer-facing delivery promise."
+   "platform": "Customer-facing delivery promise.",
+   "legacy": [
+    29
+   ]
   },
   {
    "id": "TRK-06",
    "section": "Shipment Tracking",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Proof of delivery (delivered timestamp, POD, receiver name) is available for disputes.",
    "pass": "Stated.",
@@ -1120,7 +957,7 @@
   {
    "id": "RTN-01",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Vendor-side cancellation is signalled through a status (webhook/poll).",
    "pass": "Cancel status documented.",
@@ -1129,31 +966,31 @@
   {
    "id": "RTN-02",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    17
-   ],
    "test": "A client-initiated cancel API exists, with the allowed window.",
    "pass": "Endpoint and window documented.",
-   "platform": "Informational: our platform has no outbound cancel; ops handle it manually."
+   "platform": "Informational: our platform has no outbound cancel; ops handle it manually.",
+   "legacy": [
+    17
+   ]
   },
   {
    "id": "RTN-03",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    32
-   ],
    "test": "Returns/replacement/refund process for damaged, wrong or undelivered items is documented with a window.",
    "pass": "Process and window stated.",
-   "platform": "Ops process; RETURNED sets status 10 and emails but does NOT auto-refund."
+   "platform": "Ops process; RETURNED sets status 10 and emails but does NOT auto-refund.",
+   "legacy": [
+    32
+   ]
   },
   {
    "id": "RTN-04",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Undeliverable / return-to-origin (RTO) handling is documented: status sent, re-delivery attempts, and credit back to us.",
    "pass": "RTO flow stated.",
@@ -1162,7 +999,7 @@
   {
    "id": "RTN-05",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Refund mechanism and timeline are stated (credit to prepaid balance or credit note).",
    "pass": "Stated.",
@@ -1171,7 +1008,7 @@
   {
    "id": "RTN-06",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Replacements are linked to the original order (same id or a documented link).",
    "pass": "Linkage stated.",
@@ -1180,7 +1017,7 @@
   {
    "id": "RTN-07",
    "section": "Cancellation, Returns & Refunds",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Liability for items lost or damaged in transit is stated (who bears the cost, claim window).",
    "pass": "Stated.",
@@ -1189,79 +1026,79 @@
   {
    "id": "REC-01",
    "section": "Reconciliation & Settlement",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    24
-   ],
    "test": "A settlement/payment report or transaction ledger exists (API or scheduled file).",
    "pass": "Source documented.",
-   "platform": "Finance reconciliation source of truth."
+   "platform": "Finance reconciliation source of truth.",
+   "legacy": [
+    24
+   ]
   },
   {
    "id": "REC-02",
    "section": "Reconciliation & Settlement",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    25
-   ],
    "test": "Each report line carries our reference and the vendor order id.",
    "pass": "Both fields in the report schema.",
-   "platform": "Join to merchandise_vendor_order_details."
+   "platform": "Join to merchandise_vendor_order_details.",
+   "legacy": [
+    25
+   ]
   },
   {
    "id": "REC-03",
    "section": "Reconciliation & Settlement",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    25
-   ],
    "test": "Report granularity and amount fields are documented: charged amount, tax, shipping, discount, currency, date.",
    "pass": "Field list.",
-   "platform": "Ledger match."
+   "platform": "Ledger match.",
+   "legacy": [
+    25
+   ]
   },
   {
    "id": "REC-04",
    "section": "Reconciliation & Settlement",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    26
-   ],
    "test": "The delay between order completion and appearing in the report is stated.",
    "pass": "Delay stated.",
-   "platform": "Recon job timing."
+   "platform": "Recon job timing.",
+   "legacy": [
+    26
+   ]
   },
   {
    "id": "REC-05",
    "section": "Reconciliation & Settlement",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    27
-   ],
    "test": "Refunds, cancellations, RTO and partial fulfilment appear in the same report, linked to the original order.",
    "pass": "Stated.",
-   "platform": "Single recon source."
+   "platform": "Single recon source.",
+   "legacy": [
+    27
+   ]
   },
   {
    "id": "REC-06",
    "section": "Reconciliation & Settlement",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    34
-   ],
    "test": "Tax invoices (GST-compliant where applicable) are provided per order or per period, with a download/API.",
    "pass": "Invoice process stated.",
-   "platform": "Finance compliance."
+   "platform": "Finance compliance.",
+   "legacy": [
+    34
+   ]
   },
   {
    "id": "REC-07",
    "section": "Reconciliation & Settlement",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Report format (JSON/CSV), date-range filters and timezone are documented.",
    "pass": "Stated.",
@@ -1270,31 +1107,31 @@
   {
    "id": "ERR-01",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P0",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    16
-   ],
    "test": "An error catalogue lists HTTP status, error code and meaning per endpoint.",
    "pass": "Catalogue present.",
-   "platform": "errorHandler() mapping to existing OPM000xx ids."
+   "platform": "errorHandler() mapping to existing OPM000xx ids.",
+   "legacy": [
+    16
+   ]
   },
   {
    "id": "ERR-02",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc+Live",
-   "legacy": [
-    37
-   ],
    "test": "Error responses use one consistent JSON structure across all endpoints.",
    "pass": "Same keys on every negative call.",
-   "platform": "Single error parser."
+   "platform": "Single error parser.",
+   "legacy": [
+    37
+   ]
   },
   {
    "id": "ERR-03",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc+Live",
    "test": "Failures use proper HTTP status codes (no 200 with success:false), or that pattern is explicitly documented.",
    "pass": "Non-2xx on failure, or documented exception.",
@@ -1303,44 +1140,44 @@
   {
    "id": "ERR-04",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
+   "test": "Rate limits per endpoint and the over-limit response (429 + Retry-After) are documented.",
+   "pass": "Limits and response stated.",
+   "platform": "configs.maxApiAtaTime; sync and polling pacing.",
    "legacy": [
     18,
     35
-   ],
-   "test": "Rate limits per endpoint and the over-limit response (429 + Retry-After) are documented.",
-   "pass": "Limits and response stated.",
-   "platform": "configs.maxApiAtaTime; sync and polling pacing."
+   ]
   },
   {
    "id": "ERR-05",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    36
-   ],
    "test": "Retry/backoff guidance is given, including which errors are safe to retry.",
    "pass": "Guidance stated.",
-   "platform": "OPMS retry; never blind-retry Place Order."
+   "platform": "OPMS retry; never blind-retry Place Order.",
+   "legacy": [
+    36
+   ]
   },
   {
    "id": "ERR-06",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    38
-   ],
    "test": "Uptime SLA, status page and maintenance notification process are published.",
    "pass": "Stated.",
-   "platform": "Ops alerting."
+   "platform": "Ops alerting.",
+   "legacy": [
+    38
+   ]
   },
   {
    "id": "ERR-07",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Recommended client timeouts per endpoint are stated.",
    "pass": "Stated.",
@@ -1349,7 +1186,7 @@
   {
    "id": "ERR-08",
    "section": "Errors, Rate Limits & Reliability",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Responses include a request/correlation id for support tickets.",
    "pass": "Field or header named.",
@@ -1358,7 +1195,7 @@
   {
    "id": "SEC-01",
    "section": "Security, Data & Compliance",
-   "priority": "P0",
+   "need": "Must-have",
    "verify": "Doc+Live",
    "test": "All endpoints are HTTPS only (TLS 1.2+).",
    "pass": "https base URLs; plain http refused.",
@@ -1367,7 +1204,7 @@
   {
    "id": "SEC-02",
    "section": "Security, Data & Compliance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Recipient PII handling is documented: retention, purpose limitation, deletion on request; DPA available.",
    "pass": "Policy or DPA referenced.",
@@ -1376,7 +1213,7 @@
   {
    "id": "SEC-03",
    "section": "Security, Data & Compliance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Credentials are sent in headers, never in query strings.",
    "pass": "Header-based auth only.",
@@ -1385,31 +1222,31 @@
   {
    "id": "SEC-04",
    "section": "Security, Data & Compliance",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    34
-   ],
    "test": "Cross-border orders: customs, duties, HS codes and who pays are documented. NA if domestic only.",
    "pass": "Stated.",
-   "platform": "International rewards."
+   "platform": "International rewards.",
+   "legacy": [
+    34
+   ]
   },
   {
    "id": "SEC-05",
    "section": "Security, Data & Compliance",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
-   "legacy": [
-    34
-   ],
    "test": "Orders are fully prepaid: no cash-on-delivery or payment collection from the recipient.",
    "pass": "Stated.",
-   "platform": "Reward recipients must never pay."
+   "platform": "Reward recipients must never pay.",
+   "legacy": [
+    34
+   ]
   },
   {
    "id": "SEC-06",
    "section": "Security, Data & Compliance",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "Restricted items (batteries, liquids, regulated goods) and their shipping restrictions by region are documented.",
    "pass": "Stated.",
@@ -1418,7 +1255,7 @@
   {
    "id": "SEC-07",
    "section": "Security, Data & Compliance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "Credentials are delivered through a secure channel per environment and are NOT embedded in the API document or screenshots.",
    "pass": "No live secrets in the doc. A doc with secrets = No: ask the vendor to rotate them.",
@@ -1427,7 +1264,7 @@
   {
    "id": "SEC-08",
    "section": "Security, Data & Compliance",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
    "test": "The integration credential is least-privilege (scoped to the resources we call), not an admin-level token.",
    "pass": "Scope documented.",
@@ -1436,43 +1273,43 @@
   {
    "id": "SUP-01",
    "section": "Support & Versioning",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    39
-   ],
    "test": "A named integration/technical contact and escalation matrix exist.",
    "pass": "Names/channels given.",
-   "platform": "Integration and incident handling."
+   "platform": "Integration and incident handling.",
+   "legacy": [
+    39
+   ]
   },
   {
    "id": "SUP-02",
    "section": "Support & Versioning",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    40
-   ],
    "test": "Production incident response time is documented.",
    "pass": "SLA stated.",
-   "platform": "Ops."
+   "platform": "Ops.",
+   "legacy": [
+    40
+   ]
   },
   {
    "id": "SUP-03",
    "section": "Support & Versioning",
-   "priority": "P1",
+   "need": "Important",
    "verify": "Doc",
-   "legacy": [
-    41
-   ],
    "test": "API versioning (URL or header) and a deprecation notice period are documented.",
    "pass": "Policy stated.",
-   "platform": "Avoid surprise breaking changes."
+   "platform": "Avoid surprise breaking changes.",
+   "legacy": [
+    41
+   ]
   },
   {
    "id": "SUP-04",
    "section": "Support & Versioning",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "A changelog is published.",
    "pass": "Link given.",
@@ -1481,11 +1318,66 @@
   {
    "id": "SUP-05",
    "section": "Support & Versioning",
-   "priority": "P2",
+   "need": "Nice-to-have",
    "verify": "Doc",
    "test": "A Postman collection or OpenAPI spec is provided.",
    "pass": "File or link given.",
    "platform": "Enables the live staging run (Postman CLI)."
+  }
+ ],
+ "must_haves": [
+  {
+   "item": "Place an order and get an order ID back",
+   "all": [
+    "ORD-01",
+    "ORD-02"
+   ]
+  },
+  {
+   "item": "Our address fields fit their order format",
+   "all": [
+    "ORD-05"
+   ]
+  },
+  {
+   "item": "The product ID from their catalogue (or product list) is what the order takes",
+   "all": [
+    "CAT-03"
+   ]
+  },
+  {
+   "item": "Get the order status (full status list, a status lookup, and updates by webhook or polling)",
+   "all": [
+    "STS-01",
+    "STS-03"
+   ],
+   "any": [
+    "WHK-01",
+    "POL-01"
+   ]
+  },
+  {
+   "item": "Get courier and tracking number after dispatch",
+   "all": [
+    "TRK-01"
+   ]
+  },
+  {
+   "item": "Retry safely without creating duplicate orders",
+   "all": [
+    "IDM-01"
+   ],
+   "any": [
+    "IDM-02",
+    "IDM-03"
+   ]
+  },
+  {
+   "item": "Secure login that works (auth method documented, HTTPS)",
+   "all": [
+    "AUTH-01",
+    "SEC-01"
+   ]
   }
  ]
 }

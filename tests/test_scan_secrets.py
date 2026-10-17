@@ -13,6 +13,10 @@ def test_placeholders_ignored(ss):
     assert ss.scan("API Key: <your-api-key-here>\nclient_secret: {{client_secret}}\npassword: xxxxxxxxxxxxxx") == []
 
 
+def test_truncated_samples_ignored(ss):
+    assert ss.scan('"access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."') == []
+
+
 def test_patterns(ss):
     text = "AKIAABCDEFGHIJKLMNOP eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.abcdefghijklmnop https://u:supersecret@host"
     labels = {label for label, _ in ss.scan(text)}

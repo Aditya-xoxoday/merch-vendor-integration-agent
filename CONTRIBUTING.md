@@ -1,19 +1,18 @@
 # Contributing
 
-## Adding or changing a test case
-1. Edit `.claude/skills/merch-vendor-review/references/test_cases.json`. Word the test so that
-   **Yes = compatible with Plum**, give the `pass` criteria, and say which part of the platform
-   consumes it (`platform`).
-2. Use P0 only if missing it makes the integration impossible or unsafe. Gate tests must be P0.
-3. Set `risk: true` only if a No/Open needs an engineering (base class / routing) change.
-4. Regenerate the catalogue: `python3 tools/gen_test_catalog.py`.
-5. Run `pytest -q tests`.
-6. Add a line to `CHANGELOG.md`.
+## Adding or changing a check
+1. Edit `.claude/skills/merch-vendor-review/references/test_cases.json`. Word the check so that
+   **Yes = works for us**, fill "pass" (what counts as yes), and add a short tech note.
+2. Set `need`:
+   - **Must-have** only if we truly cannot integrate without it (then add it to a `must_haves` group)
+   - **Important** if it matters but can be handled another way
+   - **Nice-to-have** otherwise
+3. Set `risk: true` only if a No/Open needs a change on our side before building.
+4. Run `python3 tools/gen_test_catalog.py`, then `pytest -q tests`.
+5. Add a line to `CHANGELOG.md`.
 
-## Changing platform facts
-`references/platform_contract.md` mirrors merch-sensei and the vendor-integrations code. When
-the code changes, update the contract and the affected tests in the same PR.
+## When our code changes
+Update `references/platform_contract.md` and the affected checks together.
 
-## Lessons from real reviews
-Every vendor review that exposes something the tests missed must add a test. That is how
-DOC-01 and SEC-07 came from JustLounge.
+## Learn from every review
+If a review finds something the checks missed, add a check.

@@ -1,6 +1,6 @@
 *{Vendor} merchandise API review ({date})*
-Verdict: {verdict} | Score {n}/100 | Gate {PASS/FAIL} | Live {n}% | Escalations {n}
-Blockers: {TEST-ID title}; {TEST-ID title}; {TEST-ID title}
-Security: {none / credentials in doc, rotation requested}
-Next: {vendor asks sent / awaiting sandbox / ready for merch-sensei}
+Can we integrate: {decision} | Must-haves {n} met, {n} open, {n} missing | API works: {sandbox result}
+Open points: {CHECK-ID short text}; {CHECK-ID short text}
+Security: {none / credentials found in doc, rotation requested}
+Next: {questions sent to vendor / waiting for sandbox access / ready to build}
 Attachments: workbook, ANALYSIS.md

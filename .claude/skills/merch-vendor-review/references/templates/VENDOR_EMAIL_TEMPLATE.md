@@ -4,7 +4,7 @@ Hi {name},
 
 Thank you for sharing the API details. We reviewed them for integration with our rewards platform and need a few more things before we can proceed.
 
-{One short paragraph per theme, P0 first, plain sentences, no numbered sub-points. Themes: order placement, order status and tracking, returns, reconciliation, sandbox access, credentials.}
+{One short paragraph per theme, must-haves first, plain sentences, no numbered sub-points. Themes: order placement, order status and tracking, returns, reconciliation, sandbox access, credentials.}
 
 {If secrets were found:} For security, please rotate the credentials included in the document and share new sandbox and production credentials separately through a secure channel.
 

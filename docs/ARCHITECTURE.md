@@ -1,35 +1,32 @@
-# Architecture
+# How it fits together
 
 ```
-vendor doc(s) ──► /merch-vendor-agent (ANALYZE)
-                    │
-  Phase 0-1  intake, extract text + images + links, platform fingerprint ──► 00_doc_inventory.md
-  Phase 2    scan_secrets.py (+ look at images) ──────────────────────────► SEC-07
-  Phase 3    lifecycle coverage map ───────────────────────────────────────► 01_coverage_map.md
-  Phase 4    130 test cases, 2 passes (fill, adversarial) ─────────────────► answers.json
-  Phase 5    status map + field mapping ───────────────────────────────────► 02_field_mapping.md
-  Phase 6    LIVE: Postman CLI on staging only ────────────────────────────► live results + fixtures
-  Phase 7    build_review.py (validate → score → gate → feasibility) ──────► .xlsx + REPORT.md
-  Phase 8    principal-engineer write-up ──────────────────────────────────► ANALYSIS.md
-  Phase 9    COMMS ────────────────────────────────────────────────────────► VENDOR_EMAIL / JIRA / MANAGER
-  Phase 10   self-QA (secrets, numbers, blockers, git)
-                    │
-                    ▼ verdict Ready / Ready with conditions
-                 HANDOFF_MERCH_SENSEI.md ──► /merch-sensei ONBOARD (engineering builds)
+vendor doc(s) ──► /merch-vendor-agent
+  1 read docs: text, images, links ─────────────► 00_doc_inventory.md
+  2 secret scan (scan_secrets.py + images)
+  3 answer 130 checks, then a second pass ──────► answers.json
+  4 status and field mapping ───────────────────► 01_field_mapping.md
+  5 sandbox tests (Postman CLI, sandbox only) ──► sandbox results
+  6 build_review.py ────────────────────────────► workbook + REPORT.md
+  7 write-up ───────────────────────────────────► ANALYSIS.md
+  8 messages ───────────────────────────────────► VENDOR_EMAIL / JIRA_COMMENT / SUMMARY
+  9 final checks
+                    │ decision Yes / Yes on paper
+                    ▼
+            HANDOFF_MERCH_SENSEI.md ──► /merch-sensei builds the connector
 ```
 
-## Components
 | Path | Role |
 |---|---|
-| `.claude/commands/merch-vendor-agent.md` | The agent: modes, phases, rules, deliverables |
-| `.claude/skills/merch-vendor-review/SKILL.md` | Skill entry point (also works standalone / uploaded to claude.ai) |
-| `references/test_cases.json` | Single source of truth: tests, gate, feasibility map |
-| `references/platform_contract.md` | Why each test exists (Plum code contract) |
-| `references/doc_intake.md` | How to read each doc format; synonyms |
-| `references/platform_playbooks.md` | Magento/Shopify/WooCommerce question sets |
+| `.claude/commands/merch-vendor-agent.md` | The agent: modes, steps, rules |
+| `.claude/skills/merch-vendor-review/SKILL.md` | The skill (also works on its own or uploaded to claude.ai) |
+| `references/test_cases.json` | All checks and the 7 must-have groups |
+| `references/platform_contract.md` | What our system needs from a vendor, and why |
+| `references/doc_intake.md` | How to read each doc type; synonyms |
+| `references/platform_playbooks.md` | Extra questions for Magento / Shopify / WooCommerce vendors |
 | `references/templates/` | Output templates |
-| `scripts/build_review.py` | Validation + scoring + workbook + Markdown |
-| `scripts/scan_secrets.py` | Redacting secret scanner |
-| `tools/gen_test_catalog.py` | Generates `docs/TEST_CATALOG.md` |
-| `tests/` | pytest suite (CI) |
-| `examples/` | Redacted reference reviews |
+| `scripts/build_review.py` | Checks answers, makes the decision, builds the workbook and REPORT.md |
+| `scripts/scan_secrets.py` | Finds credentials, prints them redacted |
+| `tools/gen_test_catalog.py` | Builds `docs/TEST_CATALOG.md` |
+| `tests/` | Automated tests (run in CI) |
+| `examples/printstop/` | A complete example review |

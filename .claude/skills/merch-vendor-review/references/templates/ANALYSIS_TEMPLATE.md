@@ -1,44 +1,38 @@
-# {Vendor} Merchandise API Analysis
+# {Vendor}: merchandise API analysis
 
-**Verdict: {Not ready | Doc-ready, live verification pending | Ready with conditions | Ready}.** {one sentence why}
+**Can we integrate?** {Yes / Yes on paper, confirm with a sandbox test / Likely yes, after the vendor answers a few points / No, we cannot integrate yet}
+**Does the API work?** {Works on sandbox / Partly tested / Problems found / Not tested yet}
+**Must-haves:** {n} met, {n} open, {n} missing (of 7)
 
-| Score | Gate | Live coverage | Escalations | Doc completeness |
-|---|---|---|---|---|
-| {n}/100 ({r}/5) | {PASS/FAIL} | {n}% | {n} | {n}% |
+{Security alert first, if the doc contains real credentials.}
 
-{Security alert first, if SEC-07 = No.}
+## What the API does
+{Plain description: environments, endpoints, login. What it can and cannot do.}
 
-## 1. What this API is
-{Platform, environment(s), endpoints, auth. What it can and cannot do, in plain terms.}
-
-## 2. Lifecycle coverage
-| Stage | Endpoint | Status |
+## Must-haves
+| | Must-have | What we found |
 |---|---|---|
-| Auth / Catalogue / Stock / Serviceability / Order / Status / Webhook / Tracking / Cancel-Return / Balance / Reconciliation | {path or "none"} | Covered / Partial / Missing |
+| Met / Open / Missing | Place an order and get an order ID back | ... |
+| ... | Our address fields fit their order format | ... |
+| ... | Product ID from their catalogue is what the order takes | ... |
+| ... | Get the order status | ... |
+| ... | Get courier and tracking number | ... |
+| ... | Retry safely without duplicate orders | ... |
+| ... | Secure login that works | ... |
 
-## 3. Top blockers (P0 first, max 5)
-1. **{TEST-ID}: {title}.** Impact on Plum: {what breaks}. Ask: {what we need from the vendor}.
+## What we need from the vendor
+{Open and missing must-haves first, then the important gaps. Short and specific.}
 
-## 4. Security
-{Findings, required actions.}
+## Other gaps (do not block)
+{Important gaps, then nice-to-have gaps, one line each.}
 
-## 5. Engineering view
-- Integration pattern: {sync/async; webhook/poll}
-- merch-sensei build complexity: {Low/Medium/High}, because {reasons}
-- Escalations: {list or none}
-- Buildable today: {e.g. catalogue sync only}. Blocked: {...}
+## Build notes
+- How orders and status flow: {sync/async; webhook or polling}
+- Anything that needs a change on our side: {list or none}
+- What we can build now: {...}
 
-## 6. Risks and mitigations
-| Risk | Likelihood | Impact | Mitigation |
+## Next steps
+| # | Step | Who | Closes |
 |---|---|---|---|
 
-## 7. Options and recommendation
-| Option | What it takes | Pros | Cons |
-|---|---|---|---|
-**Recommendation:** {one paragraph}
-
-## 8. Next steps
-| # | Action | Owner | Closes |
-|---|---|---|---|
-
-Appendix: REPORT.md (full scored report), workbook, doc inventory, coverage map, field mapping.
+Appendix: REPORT.md, workbook, doc inventory, field mapping.

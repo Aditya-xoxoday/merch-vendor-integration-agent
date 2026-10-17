@@ -53,7 +53,7 @@ def scan(text):
     found = []
     for m in LABELED.finditer(text):
         value = m.group(2)
-        if not PLACEHOLDER.match(value):
+        if not PLACEHOLDER.match(value) and ".." not in value:  # "eyJhbGci..." = truncated sample
             found.append((m.group(1).strip(), redact(value)))
     for name, rx in PATTERNS.items():
         for m in rx.finditer(text):

@@ -1,4 +1,4 @@
-"""Behaviour of the scoring, gate and verdict engine."""
+"""The decision engine: can we integrate, and does the API work."""
 import json
 import subprocess
 import sys
@@ -6,73 +6,76 @@ import sys
 from conftest import SKILL
 
 
-def ev_for(br, data, answers, status_map=None):
+def run(br, data, answers, status_map=None):
     return br.evaluate(data, answers, status_map or {})
 
 
-def test_perfect_vendor_is_ready(br, data, all_yes):
+def test_perfect_vendor(br, data, all_yes):
     answers, sm = all_yes
-    ev = ev_for(br, data, answers, sm)
-    assert ev["score"] == 100 and ev["gate_pass"] and ev["live_cov"] == 100
-    assert ev["verdict"].startswith("Ready (100% feasible")
+    ev = run(br, data, answers, sm)
+    assert ev["decision"] == "Yes, we can integrate"
+    assert ev["api_works"].startswith("Works on sandbox")
 
 
-def test_empty_answers_not_ready(br, data):
-    ev = ev_for(br, data, {})
-    assert ev["score"] == 0 and not ev["gate_pass"] and ev["verdict"] == "Not ready"
+def test_nothing_documented_is_no(br, data):
+    ev = run(br, data, {})
+    assert ev["decision"].startswith("No") and ev["counts"]["Missing"] == len(data["must_haves"])
 
 
-def test_na_is_excluded_from_score(br, data, all_yes):
+def test_no_place_order_means_no(br, data, all_yes):
     answers, sm = all_yes
-    p2 = next(t["id"] for t in data["tests"] if t["priority"] == "P2")
-    answers[p2] = {"provided": "NA", "details": "n/a"}
-    assert ev_for(br, data, answers, sm)["score"] == 100
+    answers["ORD-01"] = {"provided": "Not available", "details": ""}
+    assert run(br, data, answers, sm)["decision"].startswith("No")
 
 
-def test_live_fail_cancels_doc_yes_and_fails_gate(br, data, all_yes):
+def test_missing_balance_and_other_nice_to_haves_do_not_block(br, data, all_yes):
     answers, sm = all_yes
-    answers["IDM-02"]["live"] = "Fail"
-    ev = ev_for(br, data, answers, sm)
-    assert not ev["gate_pass"]
-    assert any(t["id"] == "IDM-02" for t in ev["contradictions"])
+    for t in data["tests"]:
+        if t["need"] != "Must-have":
+            answers[t["id"]] = {"provided": "Not available", "details": ""}
+    assert run(br, data, answers, sm)["decision"] == "Yes, we can integrate"
 
 
-def test_live_not_run_keeps_verdict_pending(br, data, all_yes):
+def test_open_must_have_is_likely_yes(br, data, all_yes):
+    answers, sm = all_yes
+    answers["STS-01"] = {"provided": "Open", "details": "one example only"}
+    assert run(br, data, answers, sm)["decision"].startswith("Likely yes")
+
+
+def test_documented_but_untested_is_yes_on_paper(br, data, all_yes):
     answers, sm = all_yes
     answers["ORD-01"]["live"] = "Not run"
-    assert ev_for(br, data, answers, sm)["verdict"] == "Doc-ready, live staging verification pending"
+    ev = run(br, data, answers, sm)
+    assert ev["decision"].startswith("Yes on paper")
+    assert ev["api_works"].startswith("Partly tested")
+
+
+def test_sandbox_failure_on_must_have_is_no(br, data, all_yes):
+    answers, sm = all_yes
+    answers["ORD-02"]["live"] = "Fail"
+    ev = run(br, data, answers, sm)
+    assert ev["decision"].startswith("No") and ev["api_works"].startswith("Problems found")
 
 
 def test_webhook_or_polling_is_enough(br, data, all_yes):
     answers, sm = all_yes
     answers["WHK-01"] = {"provided": "No", "details": "no webhooks"}
-    gate = ev_for(br, data, answers, sm)["gate"]
-    assert gate[2]["met"]
+    assert run(br, data, answers, sm)["decision"] == "Yes, we can integrate"
     answers["POL-01"] = {"provided": "Not available", "details": ""}
-    assert not ev_for(br, data, answers, sm)["gate"][2]["met"]
+    assert run(br, data, answers, sm)["decision"].startswith("No")
 
 
-def test_status_gate_needs_status_map(br, data, all_yes):
-    answers, _ = all_yes
-    assert not ev_for(br, data, answers, {})["gate"][2]["met"]
-
-
-def test_live_only_tests_answered_by_live_result(br, data):
-    ev = ev_for(br, data, {"AUTH-04": {"live": "Pass"}, "ORD-12": {"live": "Fail"}})
+def test_sandbox_only_checks_use_sandbox_result(br, data):
+    ev = run(br, data, {"AUTH-04": {"live": "Pass"}, "ORD-12": {"live": "Fail"}})
     assert ev["provided"]("AUTH-04") == "Yes" and ev["provided"]("ORD-12") == "No"
 
 
-def test_risk_answer_creates_escalation(br, data, all_yes):
+def test_risk_answer_is_flagged(br, data, all_yes):
     answers, sm = all_yes
-    answers["WHK-05"] = {"provided": "No", "details": "HMAC mandatory"}
-    ev = ev_for(br, data, answers, sm)
+    answers["WHK-05"] = {"provided": "No", "details": "signature mandatory"}
+    ev = run(br, data, answers, sm)
     assert [t["id"] for t in ev["escalations"]] == ["WHK-05"]
-    assert ev["verdict"] == "Ready with conditions"
-
-
-def test_missing_feasibility_line(br, data):
-    feas = {line: state for line, state, _ in ev_for(br, data, {})["feas"]}
-    assert feas["ORDER"] == "MISSING"
+    assert "change on our side" in ev["reason"]
 
 
 def test_validation_rejects_bad_input(br, data):
@@ -95,7 +98,7 @@ def test_cli_builds_xlsx_and_markdown(tmp_path):
     assert r.returncode == 0, r.stdout + r.stderr
     assert xlsx.stat().st_size > 0
     text = md.read_text()
-    assert "## Integration gate" in text and "ORD-02" in text
+    assert "Can we integrate?" in text and "## Must-haves" in text
 
 
 def test_cli_exits_nonzero_on_invalid(tmp_path):

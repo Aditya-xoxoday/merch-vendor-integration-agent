@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0 (2026-10-18)
+- The decision now answers "Can we integrate?" from 7 must-haves only, and "Does the API work?"
+  from sandbox tests. The 0-100 score is gone. A missing balance API (now Nice-to-have) no longer
+  pulls the result down; a missing Place Order API means No.
+- Checks are tagged Must-have / Important / Nice-to-have instead of P0/P1/P2.
+- Plain wording throughout; no role names.
+- Workbook sheets are now Summary and Checks. A short summary template is added.
+- The secret scanner ignores cut-off sample tokens such as "eyJhbGci...".
+- Example review: Printstop / Mandaala. The earlier example was removed.
+
 ## 2.1.0 (2026-10-17)
 - Added the `/merch-vendor-agent` command: 5 modes (ANALYZE, LIVE, COMMS, HANDOFF, DIFF) and a 10-phase analysis with self-QA.
 - 13 new tests (130 total, 16 sections). These cover documentation quality (DOC-01..04),
@@ -9,8 +19,7 @@
 - `scan_secrets.py`: a redacting credential scanner.
 - `build_review.py --md`: a Markdown report; a MISSING feasibility state.
 - References: platform contract, doc intake playbook, Magento/Shopify/WooCommerce question sets,
-  analysis/email/Jira/manager templates.
-- Example: the JustLounge (Magento 2) full analysis pack.
+  analysis, email, Jira and summary templates.
 - pytest suite and CI.
 
 ## 2.0.0 (2026-10-17)

@@ -1,8 +1,7 @@
 # Plum merchandise platform contract (what a vendor API must feed)
 
 This is distilled from merch-sensei (vendor-integrations `canvas`, Oct 2026). It explains *why*
-each test case exists. **Code wins over this file.** Engineering re-reads the code on the target
-branch before building.
+each test case exists. **Code wins over this file.** Re-read the code on the target branch before building.
 
 ## Order flow
 
@@ -29,11 +28,11 @@ Product sync: /vendor/sync_products -> TRUNCATE + insert; vanished SKUs disabled
 | The vendor order id is mandatory in the order response | Without it the order is treated as failed | ORD-02 |
 | Our reference (externalOrderId = voucher_insert_id) is used to find orders | The vendor must accept it and echo it back | IDM-01, WHK-03, REC-02 |
 | "Already exists" errors are resolved by refetch | A lookup by our reference is needed | IDM-02, IDM-03 |
-| Async failure before confirmation has no base-class path | Escalate before building | ORD-13 |
+| Async failure before confirmation has no base-class path | Needs a change on our side before building | ORD-13 |
 | plumAuth accepts any webhook, even if VI fails downstream | The vendor will not retry, so we need refetch/poll as a backstop | WHK-08, POL-01 |
-| Signed webhooks are unsupported | Escalate | WHK-05 |
-| Non-JSON webhooks need a new route | Escalate | WHK-04 |
-| Only AES (null IV, base64) decryption is supported | Anything else needs escalation | WHK-06 |
+| Signed webhooks are unsupported | Needs a change on our side | WHK-05 |
+| Non-JSON webhooks need a new route | Needs a change on our side | WHK-04 |
+| Only AES (null IV, base64) decryption is supported | Anything else needs a change on our side | WHK-06 |
 | Polling base reads `orders_status` | A different field needs an override | POL-02 |
 | Catalogue sync truncates the table first | A silent empty page disables everything | CAT-02, CAT-09 |
 | sku must be reversible into the order ids | Variants need deterministic SKUs | CAT-03, CAT-05 |
