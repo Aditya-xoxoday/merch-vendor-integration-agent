@@ -40,7 +40,7 @@ The full workflow is in `.claude/commands/merch-vendor-agent.md`. The short vers
 2. `python3 scripts/scan_secrets.py <files>`.
 3. Answer every check in `references/test_cases.json`, then do a second pass.
 4. Write `review.json` (shape in the `scripts/build_review.py` docstring; example in `references/example_review.json`):
-   answers, status_map, security, must_have_notes, questions, vendor_email, next_steps, and `tech`
+   answers, status_map, security, must_have_notes, blockers, api_note, questions, vendor_email, next_steps, and `tech`
    (endpoints, order mapping, status flow, failure modes, assumptions, config, build notes).
 5. Build the one output:
    ```bash

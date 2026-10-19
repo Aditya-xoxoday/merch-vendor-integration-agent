@@ -156,10 +156,10 @@ HANDOFF              /merch-sensei ONBOARD: after the open must-haves are answer
 ## The output file: one workbook, 4 tabs
 | Tab | What's in it |
 |---|---|
-| **Summary** | The decision, the 7 must-haves (met / open / missing), top vendor questions, security, next steps, and a short summary to paste into Jira or Slack |
-| **Vendor questions** | Every question (must-haves first), other gaps, and a ready email draft |
-| **Tech** | Endpoints, order field mapping, status flow, failure modes, assumptions to verify, config changes, build notes |
-| **All checks** | All 130 checks with the answer, evidence and sandbox result |
+| **Summary** | The answer in big letters (can we integrate? does the API work?), the 7 must-haves (Yes / Partly / No), blockers, next steps. One page. |
+| **Ask the vendor** | Numbered questions (must-haves first) and a ready email draft |
+| **Tech** | Build feasibility (Ready / Check / Blocked), endpoints, field and status mapping, what can go wrong, assumptions, setup changes |
+| **All checks** | Every check with its result and what we found, must-haves first, filterable |
 
 See [examples/printstop/Printstop_Review.xlsx](examples/printstop/Printstop_Review.xlsx).
 

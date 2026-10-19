@@ -15,10 +15,10 @@ Every review produces **one workbook**: `reviews/<vendor>/<Vendor>_Review.xlsx`.
 
 | Tab | Contents |
 |---|---|
-| Summary | Decision, must-haves, top vendor questions, security, next steps, a copy-paste summary for Jira/Slack |
-| Vendor questions | All questions (must-haves first), other gaps, the email draft |
-| Tech | Endpoints, order field mapping, status flow, failure modes, assumptions, config changes, build notes |
-| All checks | All 130 checks with answer, evidence and sandbox result |
+| Summary | The answer in big letters (can we integrate? does the API work?), the 7 must-haves, blockers, next steps |
+| Ask the vendor | Numbered questions (must-haves first) and the email draft |
+| Tech | Build feasibility, endpoints, field and status mapping, what can go wrong, assumptions, setup changes |
+| All checks | Every check with its result and what we found (must-haves first, filterable) |
 
 The data behind it lives in `reviews/<vendor>/review.json` (keep it; DIFF mode needs it). Only
 these two files are created. Extras are made **only when asked**:
@@ -97,6 +97,8 @@ Decision:
    `examples/printstop/review.json`):
    - `answers`, `status_map`, `security`
    - `must_have_notes`: one short line per must-have, plain words
+   - `blockers`: 3 to 6 short plain lines, the things to clear before go-live
+   - `api_note`: one plain sentence on what worked and failed on sandbox
    - `questions`: must-haves first, each a clear question with check IDs
    - `vendor_email`: short and plain
    - `next_steps`

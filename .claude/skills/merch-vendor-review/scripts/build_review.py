@@ -11,12 +11,12 @@ questions) and the build feasibility in merch-sensei's format (AUTH, ORDER, IDEM
 build files, handoff).
 
 Workbook tabs:
-    Summary           decision, must-haves, what we need from the vendor, security, next steps,
-                      and a short copy-paste summary for Jira/Slack
-    Vendor questions  numbered questions (must-haves first), other gaps, and the email draft
-    Tech              endpoints, order field mapping, status flow, failure modes, assumptions,
-                      config changes, build notes (only when review.json has "tech")
-    All checks        every check with answer, evidence and sandbox result
+    Summary           the answer (can we integrate? does the API work?), the 7 must-haves,
+                      blockers, next steps
+    Ask the vendor    numbered questions (must-haves first) and the email draft
+    Tech              build feasibility, endpoints, field and status mapping, what can go wrong,
+                      assumptions, setup changes (only when review.json has "tech")
+    All checks        every check: result and what we found (must-haves first, filterable)
 
 <review.json>:
     {
@@ -30,6 +30,8 @@ Workbook tabs:
       },
       "status_map": {"in production": "CONFIRMED", "dispatched": "SHIPPED"},
       "security": "No credentials found in the document.",                 # optional
+      "blockers": ["Every error is HTTP 500 ...", "..."],                  # optional, short plain lines
+      "api_note": "Order, status and catalogue worked; errors return HTTP 500.",  # optional, plain words
       "must_have_notes": {"1": "orders_id returned", "4": "Only 1 status documented"},  # optional, by must-have #
       "questions": [{"q": "Full list of order statuses?", "need": "Must-have", "checks": "STS-01"}],  # optional
       "vendor_email": "Subject: ...\n\nHi ...",                              # optional
@@ -221,87 +223,102 @@ def evaluate(data, answers, status_map):
     }
 
 
-# ---------- workbook ----------
+# ---------- workbook (clean layout: one question per tab) ----------
 
-TECH_SECTIONS = [  # key, title, [(field, column label, width)]
+TECH_SECTIONS = [  # key, title, [(field, column label)]
     ("endpoints", "Endpoints", [("operation", "Operation"), ("call", "Call"), ("notes", "Notes")]),
-    ("order_mapping", "Order field mapping", [("their_field", "Their field"), ("our_source", "Our source"),
-                                              ("rule", "Rule")]),
-    ("status_flow", "Status flow", [("their_status", "Their status"), ("our_status", "Our status"),
-                                    ("effect", "What happens")]),
-    ("failure_modes", "Failure modes", [("failure", "Failure"), ("handling", "Handling"), ("severity", "Severity")]),
-    ("assumptions", "Assumptions to verify", [("assumption", "Assumption"), ("verify", "How to verify")]),
-    ("config", "Config changes", [("where", "Where"), ("change", "Change")]),
+    ("order_mapping", "Order fields: ours to theirs", [("our_source", "Our field"), ("their_field", "Their field"),
+                                                       ("rule", "Rule")]),
+    ("status_flow", "Status mapping", [("their_status", "Their status"), ("our_status", "Our status"),
+                                       ("effect", "What happens")]),
+    ("failure_modes", "What can go wrong", [("failure", "Problem"), ("severity", "Severity"),
+                                            ("handling", "How we handle it")]),
+    ("assumptions", "Assumptions to check", [("assumption", "Assumption"), ("verify", "How to check")]),
+    ("config", "Setup changes", [("where", "Where"), ("change", "Change")]),
 ]
+STATE_LABEL = {"Met": "✓  Yes", "Open": "!  Partly", "Missing": "✗  No"}
+ANSWER_LABEL = {"Yes": "✓  Yes", "Open": "!  Partly", "No": "✗  No", "Not available": "–  Not stated", "NA": "n/a"}
+ANSWER_FILL = {"Yes": GREEN, "Open": AMBER, "No": RED, "Not available": "EDEDED"}
+LIGHT = "D9E1F2"
 
 
 class Sheet:
-    """Small helper that writes clean, consistently styled blocks top to bottom."""
+    """Writes clean blocks top to bottom: title, section headings, tables, label/value rows, text boxes."""
 
     def __init__(self, ws, widths):
-        self.ws, self.row = ws, 1
+        self.ws, self.row, self.ncols = ws, 1, len(widths)
         for i, w in enumerate(widths, 1):
             ws.column_dimensions[get_column_letter(i)].width = w
-        self.ncols = len(widths)
         ws.sheet_view.showGridLines = False
+        ws.sheet_view.zoomScale = 110
+
+    def _cell(self, r, c, value, **style):
+        cell = self.ws.cell(row=r, column=c, value=value)
+        cell.font = font(**{k: v for k, v in style.items() if k in ("bold", "size", "color", "italic")})
+        cell.alignment = Alignment(wrap_text=True, vertical="center" if style.get("center") else "top",
+                                   horizontal="center" if style.get("center") else "left")
+        if style.get("fill"):
+            cell.fill = PatternFill("solid", fgColor=style["fill"])
+        if style.get("box"):
+            cell.border = border()
+        return cell
+
+    def _span(self):
+        self.ws.merge_cells(start_row=self.row, start_column=1, end_row=self.row, end_column=self.ncols)
 
     def title(self, text, sub=None):
-        self.ws.cell(row=self.row, column=1, value=text).font = font(bold=True, size=15, color=NAVY)
+        self._span()
+        self._cell(self.row, 1, text, bold=True, size=18, color=NAVY)
+        self.ws.row_dimensions[self.row].height = 30
         self.row += 1
         if sub:
-            self.ws.cell(row=self.row, column=1, value=sub).font = font(italic=True, color="595959")
+            self._span()
+            self._cell(self.row, 1, sub, italic=True, color="595959")
             self.row += 1
 
     def heading(self, text):
         self.row += 1
-        for c in range(1, self.ncols + 1):
-            cell = self.ws.cell(row=self.row, column=c, value=text if c == 1 else None)
-            cell.font = font(bold=True, color=WHITE)
-            cell.fill = PatternFill("solid", fgColor=NAVY)
+        self._span()
+        self._cell(self.row, 1, text, bold=True, size=12, color=WHITE, fill=NAVY)
+        self.ws.row_dimensions[self.row].height = 20
         self.row += 1
 
-    def table(self, labels, rows, fills=None):
+    def table(self, labels, rows, first_col_fills=None, center_first=False):
         for c, label in enumerate(labels, 1):
-            cell = self.ws.cell(row=self.row, column=c, value=label)
-            cell.font = font(bold=True)
-            cell.fill = PatternFill("solid", fgColor="D9E1F2")
-            cell.border = border()
+            self._cell(self.row, c, label, bold=True, fill=LIGHT, box=True)
         self.row += 1
         for i, values in enumerate(rows):
             for c, v in enumerate(values, 1):
-                cell = self.ws.cell(row=self.row, column=c, value=v)
-                cell.font = font()
-                cell.alignment = Alignment(wrap_text=True, vertical="top", horizontal="left")
-                cell.border = border()
-                if i % 2:
-                    cell.fill = PatternFill("solid", fgColor=GREY)
-            if fills and fills[i]:
-                cell = self.ws.cell(row=self.row, column=1)
-                cell.fill = PatternFill("solid", fgColor=fills[i])
-                cell.font = font(bold=True)
+                fill = first_col_fills[i] if (first_col_fills and c == 1) else None
+                self._cell(self.row, c, v, box=True, fill=fill, bold=(c == 1 and bool(first_col_fills)),
+                           center=(c == 1 and center_first))
             self.row += 1
 
-    def pair(self, label, value, fill=None):
-        a = self.ws.cell(row=self.row, column=1, value=label)
-        a.font = font(bold=True)
-        a.alignment = Alignment(vertical="top")
-        b = self.ws.cell(row=self.row, column=2, value=value)
-        b.font = font(bold=True)
-        b.alignment = Alignment(wrap_text=True, vertical="top")
-        if self.ncols > 2:
-            self.ws.merge_cells(start_row=self.row, start_column=2, end_row=self.row, end_column=self.ncols)
-        if fill:
-            b.fill = PatternFill("solid", fgColor=fill)
+    def big(self, label, value, fill, note=None):
+        """A large answer row: LABEL | BIG VALUE (merged across), with an optional note row below."""
+        self._cell(self.row, 1, label, bold=True, size=12, center=True)
+        self.ws.merge_cells(start_row=self.row, start_column=2, end_row=self.row, end_column=self.ncols)
+        self._cell(self.row, 2, value, bold=True, size=16, fill=fill, center=True)
+        self.ws.row_dimensions[self.row].height = 34
         self.row += 1
+        if note:
+            self.ws.merge_cells(start_row=self.row, start_column=2, end_row=self.row, end_column=self.ncols)
+            self._cell(self.row, 2, note, italic=True, color="404040")
+            self.row += 1
 
     def text(self, value, height=None):
-        cell = self.ws.cell(row=self.row, column=1, value=value)
-        cell.font = font()
-        cell.alignment = Alignment(wrap_text=True, vertical="top")
         self.ws.merge_cells(start_row=self.row, start_column=1, end_row=self.row, end_column=self.ncols)
+        self._cell(self.row, 1, value, box=True)
         if height:
             self.ws.row_dimensions[self.row].height = height
         self.row += 1
+
+    def bullets(self, items):
+        for i, item in enumerate(items, 1):
+            self._cell(self.row, 1, i, bold=True, center=True)
+            self.ws.merge_cells(start_row=self.row, start_column=2, end_row=self.row, end_column=self.ncols)
+            self._cell(self.row, 2, item)
+            self.row += 1
 
 
 def vendor_questions(data, payload, ev):
@@ -318,81 +335,89 @@ def vendor_questions(data, payload, ev):
     return rows
 
 
-def short_summary(payload, ev):
-    c = ev["counts"]
-    open_items = [m["item"] for m in ev["must"] if m["state"] != "Met"]
-    lines = [f"{payload.get('vendor_name', 'Vendor')}: {ev['decision']}.",
-             f"Must-haves: {c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])}).",
-             f"API test: {ev['api_works']}."]
-    if open_items:
-        lines.append("Open: " + "; ".join(open_items) + ".")
-    if payload.get("security"):
-        lines.append(f"Security: {payload['security']}")
-    steps = payload.get("next_steps") or []
-    if steps:
-        lines.append(f"Next: {steps[0]['step']}.")
-    return "\n".join(lines)
+def headline(ev):
+    d = ev["decision"]
+    if d.startswith("No"):
+        return "NO, NOT YET", RED
+    if d.startswith("Likely"):
+        return "LIKELY YES", AMBER
+    if d.startswith("Yes on paper"):
+        return "YES, AFTER A SANDBOX TEST", AMBER
+    return "YES", GREEN
+
+
+def api_headline(ev):
+    a = ev["api_works"]
+    if a.startswith("Works"):
+        return "YES, ALL SANDBOX TESTS PASSED", GREEN
+    if a.startswith("Problems"):
+        return f"MOSTLY: {len(ev['live_fail'])} SANDBOX ISSUE{'S' if len(ev['live_fail']) != 1 else ''}", AMBER
+    if a.startswith("Partly"):
+        return "PARTLY TESTED", AMBER
+    return "NOT TESTED YET", "EDEDED"
+
+
+def api_note(data, ev):
+    run = [t for t in data["tests"] if ev["live"](t["id"]) in ("Pass", "Fail")]
+    if not run:
+        return "No sandbox tests yet. Ask the vendor for sandbox access, then run LIVE mode."
+    fails = len(ev["live_fail"])
+    note = f"{len(run) - fails} of {len(run)} sandbox checks passed"
+    return note + (f"; {fails} failed (marked red on 'All checks')." if fails else ".")
 
 
 def build_summary(wb, data, payload, ev):
     ws = wb.active
     ws.title = "Summary"
-    s = Sheet(ws, [22, 52, 70])
-    sub = " | ".join(x for x in [f"Reviewed {payload['reviewed_on']}" if payload.get("reviewed_on") else "",
-                                  *payload.get("doc_sources", [])] if x)
-    s.title(f"{payload.get('vendor_name', 'Vendor')}: merchandise API review", sub or None)
+    s = Sheet(ws, [24, 34, 74])
+    s.title(payload.get("vendor_name", "Vendor"), f"Merchandise API review · {payload.get('reviewed_on', '')}")
+
+    s.heading("The answer")
+    text, fill = headline(ev)
+    s.big("Can we integrate?", text, fill, ev["reason"][:1].upper() + ev["reason"][1:] + ".")
+    text, fill = api_headline(ev)
+    s.big("Does the API work?", text, fill, payload.get("api_note") or api_note(data, ev))
+
     c = ev["counts"]
-    s.heading("Decision")
-    s.pair("Can we integrate?", f"{ev['decision']} ({ev['reason']})",
-           RED if c["Missing"] else AMBER if c["Open"] or ev["escalations"] else GREEN)
-    s.pair("Does the API work?", ev["api_works"],
-           RED if ev["live_fail"] else AMBER if not ev["api_works"].startswith("Works") else GREEN)
-    s.pair("Must-haves", f"{c['Met']} met, {c['Open']} open, {c['Missing']} missing (of {len(ev['must'])})")
-    if payload.get("security"):
-        s.pair("Security", payload["security"])
-
-    s.heading("Must-haves")
+    s.heading(f"Must-haves: {c['Met']} of {len(ev['must'])} met")
     notes = payload.get("must_have_notes", {})
-    s.table(["Status", "Must-have", "What we found"],
-            [(m["state"], m["item"], notes.get(str(i), m["evidence"])) for i, m in enumerate(ev["must"], 1)],
-            fills=[FILL[m["state"]] for m in ev["must"]])
+    rows = [(STATE_LABEL[m["state"]], m["item"], notes.get(str(i), m["evidence"].split("\n")[0]))
+            for i, m in enumerate(ev["must"], 1)]
+    s.table(["Result", "Must-have", "What we found"], rows,
+            first_col_fills=[FILL[m["state"]] for m in ev["must"]], center_first=True)
 
-    if ev["escalations"]:
-        s.heading("Needs a change on our side first")
-        s.table(["Check", "Issue", "Evidence"],
-                [(t["id"], t["test"], payload["answers"].get(t["id"], {}).get("details", "")) for t in ev["escalations"]])
-
-    qs = vendor_questions(data, payload, ev)
-    if qs:
-        s.heading("What we need from the vendor (top 5; full list on 'Vendor questions')")
-        s.table(["Need", "Question", "Checks"], qs[:5])
+    blockers = payload.get("blockers") or (payload.get("tech") or {}).get("risks") or []
+    if payload.get("security") and not payload["security"].lower().startswith("no credentials"):
+        blockers = [f"Security: {payload['security']}"] + list(blockers)
+    if blockers:
+        s.heading("Blockers to clear before go-live")
+        s.bullets(blockers)
 
     steps = payload.get("next_steps") or []
     if steps:
         s.heading("Next steps")
-        s.table(["#", "Step", "Who"], [(i, x["step"], x.get("who", "")) for i, x in enumerate(steps, 1)])
+        s.bullets([f"{x['step']}  ({x['who']})" if x.get("who") else x["step"] for x in steps])
 
-    s.heading("Short summary (copy for Jira / Slack)")
-    s.text(short_summary(payload, ev), height=95)
-    ws.freeze_panes = "A3"
+    s.row += 1
+    s._cell(s.row, 1, "More detail: 'Ask the vendor' (questions + email) · 'Tech' (build view) · "
+                      "'All checks' (every check with evidence)", italic=True, color="7F7F7F")
+    ws.merge_cells(start_row=s.row, start_column=1, end_row=s.row, end_column=3)
 
 
 def build_questions(wb, data, payload, ev):
-    ws = wb.create_sheet("Vendor questions")
-    s = Sheet(ws, [6, 14, 80, 22])
-    s.title("Vendor questions", "Must-haves first. Important and nice-to-have gaps never block the integration.")
+    ws = wb.create_sheet("Ask the vendor")
+    s = Sheet(ws, [6, 14, 112])
+    s.title("Ask the vendor", "Must-haves first. Other questions are good to know but do not block.")
     qs = vendor_questions(data, payload, ev)
-    s.heading("Questions to send")
-    s.table(["#", "Need", "Question", "Checks"], [(i, *q) for i, q in enumerate(qs, 1)])
-    for need in ("Important", "Nice-to-have"):
-        gaps = ev["gaps"][need]
-        if gaps:
-            s.heading(f"{need} gaps (do not block)")
-            s.table(["#", "Check", "Gap", "Answer"],
-                    [(i, t["id"], t["test"], ev["provided"](t["id"])) for i, t in enumerate(gaps, 1)])
+    s.heading("Questions")
+    fills = [RED if q[0] == "Must-have" else None for q in qs]
+    s.table(["#", "Priority", "Question"], [(i, q[0], q[1]) for i, q in enumerate(qs, 1)], center_first=True)
+    for r, f in zip(range(s.row - len(qs), s.row), fills):
+        if f:
+            ws.cell(row=r, column=2).fill = PatternFill("solid", fgColor=AMBER)
     if payload.get("vendor_email"):
-        s.heading("Email draft")
-        s.text(payload["vendor_email"], height=max(150, 15 * payload["vendor_email"].count("\n")))
+        s.heading("Email draft (ready to send)")
+        s.text(payload["vendor_email"], height=max(160, 16 * (payload["vendor_email"].count("\n") + 8)))
 
 
 def build_tech(wb, payload, ev):
@@ -400,13 +425,18 @@ def build_tech(wb, payload, ev):
     if not tech:
         return
     ws = wb.create_sheet("Tech")
-    s = Sheet(ws, [34, 46, 64])
-    s.title("Tech", "Build-level detail for developers. Full spec (if produced): <Vendor>_TECH_SPEC.md")
+    s = Sheet(ws, [30, 40, 80])
+    s.title("Tech", "For developers: how this vendor fits our merchandise platform.")
     if tech.get("api_summary"):
-        s.heading("What the API does")
-        s.text(tech["api_summary"], height=60)
-    s.heading("Build feasibility (merch-sensei format)")
-    s.table(["Line", "Status", "Note"], [(l, i, n) for l, i, n in feasibility(payload, ev)])
+        s.heading("How the API works")
+        s.text(tech["api_summary"], height=75)
+    s.heading("Build feasibility")
+    word = {"✅": ("✓  Ready", GREEN), "⚠️": ("!  Check", AMBER), "❌": ("✗  Blocked", RED), "➖": ("–  Not needed", "EDEDED")}
+    rows = feasibility(payload, ev)
+    s.table(["Area", "Status", "Note"], [(l.title().replace("/", " / "), word.get(i, (i, WHITE))[0], n) for l, i, n in rows])
+    for r, (_, icon, _) in zip(range(s.row - len(rows), s.row), rows):
+        ws.cell(row=r, column=2).fill = PatternFill("solid", fgColor=word.get(icon, (icon, WHITE))[1])
+        ws.cell(row=r, column=2).font = font(bold=True)
     sm = payload.get("status_map", {})
     for key, title, cols in TECH_SECTIONS:
         rows = tech.get(key) or []
@@ -419,39 +449,39 @@ def build_tech(wb, payload, ev):
         s.table(labels + [""] * (3 - len(labels)), [[r.get(f, "") for f, _ in cols] for r in rows])
     if tech.get("build_notes"):
         s.heading("Build notes")
-        for note in tech["build_notes"]:
-            s.text(f"- {note}")
+        s.bullets(tech["build_notes"])
 
 
 def build_checks(wb, data, answers, ev):
     ws = wb.create_sheet("All checks")
-    cols = [("ID", 9), ("Area", 20), ("Need", 13), ("Checked by", 11), ("Check", 55),
-            ("What counts as yes", 38), ("Answer", 13), ("Evidence", 46), ("Sandbox", 11),
-            ("Sandbox notes", 30), ("Tech note", 40)]
+    cols = [("Area", 24), ("Need", 13), ("Check", 60), ("Result", 14), ("What we found", 70), ("ID", 9)]
     for c, (label, w) in enumerate(cols, 1):
         cell = ws.cell(row=1, column=c, value=label)
         cell.font = font(bold=True, color=WHITE)
         cell.fill = PatternFill("solid", fgColor=NAVY)
         cell.alignment = Alignment(vertical="center", wrap_text=True)
-        cell.border = border()
         ws.column_dimensions[get_column_letter(c)].width = w
-    for i, t in enumerate(data["tests"]):
+    order = {"Must-have": 0, "Important": 1, "Nice-to-have": 2}
+    tests = sorted(data["tests"], key=lambda t: order[t["need"]])  # must-haves first, then the rest
+    for t in tests:
         a = answers.get(t["id"], {})
         p, lv = ev["provided"](t["id"]), ev["live"](t["id"])
-        ws.append([t["id"], t["section"], t["need"], t["verify"].replace("Doc", "Docs").replace("Live", "Sandbox"),
-                   t["test"], t["pass"], p, a.get("details", ""), lv, a.get("live_notes", ""), t["platform"]])
+        found = a.get("details", "")
+        if lv in ("Pass", "Fail"):
+            found = (found + "\n" if found else "") + f"Sandbox {lv.lower()}: {a.get('live_notes', '')}".rstrip(": ")
+        ws.append([t["section"], t["need"], t["test"], ANSWER_LABEL.get(p, p), found, t["id"]])
         r = ws.max_row
         for c in range(1, len(cols) + 1):
             cell = ws.cell(row=r, column=c)
-            cell.font = font(bold=(c == 3 and t["need"] == "Must-have"))
-            cell.fill = PatternFill("solid", fgColor=GREY if i % 2 else WHITE)
+            cell.font = font(bold=(c == 2 and t["need"] == "Must-have"), color="7F7F7F" if c == 6 else "000000")
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.border = border()
-        for c, v in ((7, p), (9, lv)):
-            if v in FILL:
-                ws.cell(row=r, column=c).fill = PatternFill("solid", fgColor=FILL[v])
+        if p in ANSWER_FILL:
+            ws.cell(row=r, column=4).fill = PatternFill("solid", fgColor=ANSWER_FILL[p])
+        if lv == "Fail":
+            ws.cell(row=r, column=5).fill = PatternFill("solid", fgColor=RED)
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{ws.max_row}"
+    ws.auto_filter.ref = f"A1:F{ws.max_row}"
     ws.sheet_view.showGridLines = False
 
 

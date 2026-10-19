@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.3.0 (2026-10-19)
+- Cleaner workbook, one question per tab:
+  - **Summary:** the answer in big letters, must-haves as Yes / Partly / No, blockers, next steps
+  - **Ask the vendor:** questions and the email
+  - **Tech:** Ready / Check / Blocked words instead of emoji
+  - **All checks:** 6 columns, must-haves first
+- Titles and headings span the full width; check IDs are gone from the Summary.
+- New optional review.json fields: `blockers`, `api_note`.
+
 ## 4.2.0 (2026-10-18)
 - Every review now replies with **two boxes**:
   - the review (decision for everyone)
