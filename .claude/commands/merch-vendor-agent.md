@@ -98,6 +98,10 @@ Decision:
    - `answers`, `status_map`, `security`
    - `must_have_notes`: one short line per must-have, plain words
    - `blockers`: 3 to 6 short plain lines, the things to clear before go-live
+   - `short_summary` (always): the plain summary printed first and used as the Jira comment:
+     `context` (who the vendor is, what we did), `tested` (only what was really run, with ✅/❌),
+     `has` (need, their API call, status), `missing` (title, detail, why it matters, ref, blocker
+     true/false; blocker first), `todo` (task, who). Plain words, no jargon.
    - `api_note`: one plain sentence on what worked and failed on sandbox
    - `questions`: must-haves first, each a clear question with check IDs
    - `vendor_email`: short and plain
@@ -115,8 +119,12 @@ Decision:
    - email plain
    - nothing in `reviews/` staged in git
 
-**Reply** in chat with **both boxes** that `build_review.py` prints, pasted exactly inside one
-code block:
+**Reply** in this order:
+0. **The short summary** that `build_review.py` prints first (context, what we tested, what their
+   API has, what is missing and why, what needs to be done), as normal text, not in a code block.
+   This is also the Jira comment.
+
+Then **both boxes** that `build_review.py` prints, pasted exactly inside one code block:
 1. **🛒 Merch Vendor Review**: VERDICT, API TEST, SECURITY, MUST-HAVES, AREAS, GAPS, ASK THE
    VENDOR, NEXT STEPS, OUTPUT. This is the decision, for everyone.
 2. **🛠️ Build Feasibility (merch-sensei format)**: AUTH, ORDER, IDEMPOTENCY, ADDRESS, STATUS MAP,

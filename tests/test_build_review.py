@@ -113,6 +113,10 @@ def test_cli_prints_boxed_report(tmp_path):
                         str(SKILL / "references" / "test_cases.json"), str(ROOT / "examples" / "printstop" / "review.json"),
                         str(tmp_path / "o.xlsx")], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+    assert r.stdout.lstrip().startswith("**")  # short summary comes first
+    for label in ("**Context**", "**What their API has**", "**What needs to be done**"):
+        assert label in r.stdout
+    assert r.stdout.index("**What needs to be done**") < r.stdout.index("VERDICT")
     for label in ("VERDICT", "API TEST", "PLACE ORDER", "SAFE RETRY", "AREAS", "ASK THE VENDOR", "OUTPUT"):
         assert label in r.stdout
     assert "Likely yes" in r.stdout and "—" not in r.stdout

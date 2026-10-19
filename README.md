@@ -25,8 +25,15 @@ Then in Claude Code:
 ```
 Share the vendor doc (file path or link). You get both boxes in chat, and the workbook in `reviews/<vendor>/`.
 
-## What you see in chat: two boxes
-Every review replies with **both**:
+## What you see in chat: a short summary, then two boxes
+Every review starts with a **short summary in plain words**, which is also ready to paste into Jira:
+1. **Context:** who the vendor is and what we did
+2. **What we tested**
+3. **What their API has**
+4. **What is missing, and why it matters** (blockers first)
+5. **What needs to be done**, with who does it
+
+Then come **both** boxes:
 1. **🛒 Merch Vendor Review**: the decision, for everyone.
 2. **🛠️ Build Feasibility (merch-sensei format)**: the build view, for developers.
 

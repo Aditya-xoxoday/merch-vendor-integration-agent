@@ -6,7 +6,8 @@ Build the ONE output of a review: a single workbook that answers "can we integra
 Usage:
     python3 build_review.py <test_cases.json> <review.json> <Vendor>_Review.xlsx [--md <report.md>]
 
-Prints TWO boxed reports for the chat reply: the review (decision, must-haves, areas, vendor
+Prints a SHORT SUMMARY first (context, what we tested, what their API has, what is missing and why,
+what needs to be done; ready to paste into Jira), then TWO boxed reports for the chat reply: the review (decision, must-haves, areas, vendor
 questions) and the build feasibility in merch-sensei's format (AUTH, ORDER, IDEMPOTENCY, ...,
 build files, handoff).
 
@@ -32,6 +33,13 @@ Workbook tabs:
       "security": "No credentials found in the document.",                 # optional
       "blockers": ["Every error is HTTP 500 ...", "..."],                  # optional, short plain lines
       "api_note": "Order, status and catalogue worked; errors return HTTP 500.",  # optional, plain words
+      "short_summary": {                                                   # optional; printed first
+        "context": "Manual vendor today; we read the API doc and tested staging.",
+        "tested": ["Getting the product list ✅", "Placing a test order (preview) ✅"],
+        "has": [{"need": "Place order", "api": "?order", "status": "✅ Works"}],
+        "missing": [{"title": "Orders are put on hold", "detail": "...", "why": "...", "blocker": true}],
+        "todo": [{"task": "Approve our orders automatically", "who": "Vendor"}]
+      },
       "must_have_notes": {"1": "orders_id returned", "4": "Only 1 status documented"},  # optional, by must-have #
       "questions": [{"q": "Full list of order statuses?", "need": "Must-have", "checks": "STS-01"}],  # optional
       "vendor_email": "Subject: ...\n\nHi ...",                              # optional
@@ -485,6 +493,57 @@ def build_checks(wb, data, answers, ev):
     ws.sheet_view.showGridLines = False
 
 
+# ---------- short summary (first thing in every reply; also the Jira comment) ----------
+
+def build_short_summary(payload, ev):
+    """Plain summary: context, what we tested, what their API has, what is missing and why, what to do.
+    Uses review.json "short_summary" when given; otherwise builds a simpler version from the review."""
+    ss = payload.get("short_summary") or {}
+    name = payload.get("vendor_name", "Vendor").split(" (")[0]
+    headline_text = {"No": "we cannot connect yet", "Likely yes": "we can connect, after a few answers from them",
+                     "Yes on paper": "we can connect, after one sandbox test", "Yes,": "we can connect"}
+    verdict = next((v for k, v in headline_text.items() if ev["decision"].startswith(k)), ev["decision"])
+    out = [f"**{name} API review: {verdict}**", ""]
+
+    out += ["**Context**", ss.get("context") or f"We reviewed {name}'s API documentation"
+            + ("." if ev["api_works"].startswith("Not tested") else " and tested their staging system."), ""]
+
+    tested = ss.get("tested") or []  # only what was really run; never derived
+    if tested:
+        out += ["**What we tested**"] + [f"- {t}" for t in tested] + [""]
+
+    has = ss.get("has") or [{"need": m["item"], "api": "", "status": {"Met": "✅ Yes", "Open": "⚠️ Partly",
+                                                                       "Missing": "❌ No"}[m["state"]]}
+                            for m in ev["must"]]
+    out += ["**What their API has**", "| Need | Their API | Status |", "|---|---|---|"]
+    out += [f"| {h['need']} | {('`' + h['api'] + '`') if h.get('api') else ''} | {h['status']} |" for h in has]
+    out.append("")
+
+    missing = ss.get("missing")
+    if missing is None:
+        missing = [{"title": b, "detail": "", "why": "", "blocker": i == 0}
+                   for i, b in enumerate(payload.get("blockers") or (payload.get("tech") or {}).get("risks") or [])]
+    if missing:
+        out.append("**What is missing, and why it matters**")
+        for i, m in enumerate(missing, 1):
+            flag = "🚫 " if m.get("blocker") else ""
+            tail = " (BLOCKER)" if m.get("blocker") else ""
+            out += ["", f"{flag}**{i}. {m['title']}{tail}**"]
+            if m.get("detail"):
+                out.append(m["detail"])
+            if m.get("why"):
+                out.append(f"**Why it matters:** {m['why']}")
+            if m.get("ref"):
+                out.append(f"_{m['ref']}_")
+        out.append("")
+
+    todo = ss.get("todo") or [{"task": x["step"], "who": x.get("who", "")} for x in payload.get("next_steps") or []]
+    if todo:
+        out += ["**What needs to be done**", "| # | Task | Who |", "|---|---|---|"]
+        out += [f"| {i} | {t['task']} | {t.get('who', '')} |" for i, t in enumerate(todo, 1)]
+    return "\n".join(out).rstrip() + "\n"
+
+
 # ---------- terminal report (merch-sensei style) ----------
 
 ICON = {"Met": "✅", "Open": "⚠️", "Missing": "❌"}
@@ -708,6 +767,7 @@ def main():
         with open(md_path, "w") as f:
             f.write(build_markdown(data, answers, payload, ev))
         print(f"Wrote {md_path}")
+    print(build_short_summary(payload, ev))
     print(build_terminal_report(data, payload, ev, out_path))
     print()
     print(build_feasibility_report(data, payload, ev))

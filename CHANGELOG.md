@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.4.0 (2026-10-19)
+- Every reply now starts with a **short summary** in plain words (context, what we tested, what their
+  API has, what is missing and why, what needs to be done). It is also the Jira comment.
+  After it come the two boxes and the workbook, as before.
+- New review.json field `short_summary`; a simpler version is built automatically when it is missing.
+
 ## 4.3.0 (2026-10-19)
 - Cleaner workbook, one question per tab:
   - **Summary:** the answer in big letters, must-haves as Yes / Partly / No, blockers, next steps

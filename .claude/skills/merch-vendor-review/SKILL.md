@@ -40,13 +40,15 @@ The full workflow is in `.claude/commands/merch-vendor-agent.md`. The short vers
 2. `python3 scripts/scan_secrets.py <files>`.
 3. Answer every check in `references/test_cases.json`, then do a second pass.
 4. Write `review.json` (shape in the `scripts/build_review.py` docstring; example in `references/example_review.json`):
-   answers, status_map, security, must_have_notes, blockers, api_note, questions, vendor_email, next_steps, and `tech`
+   answers, status_map, security, must_have_notes, blockers, api_note, short_summary, questions, vendor_email,
+   next_steps, and `tech`
    (endpoints, order mapping, status flow, failure modes, assumptions, config, build notes).
 5. Build the one output:
    ```bash
    python3 scripts/build_review.py references/test_cases.json review.json <Vendor>_Review.xlsx
    ```
-6. Reply with BOTH boxes the builder prints, inside one code block: the review (VERDICT, MUST-HAVES,
+6. Reply with the SHORT SUMMARY the builder prints first (context, tested, what their API has, what is
+   missing and why, what needs to be done; also the Jira comment), then BOTH boxes inside one code block: the review (VERDICT, MUST-HAVES,
    AREAS, ASK THE VENDOR, NEXT STEPS) and the build feasibility in merch-sensei format (AUTH, ORDER,
    IDEMPOTENCY, ... BUILD FILES, HANDOFF). Then link the workbook.
 
