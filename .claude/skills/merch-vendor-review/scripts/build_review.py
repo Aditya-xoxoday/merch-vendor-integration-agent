@@ -206,7 +206,8 @@ def evaluate(data, answers, status_map):
         decision = "Yes, we can integrate"
         reason = "every must-have is documented and passed on sandbox"
     if escalations and not counts["Missing"]:
-        reason += f"; {plural(len(escalations), 'item')} need a change on our side first"
+        n = len(escalations)
+        reason += f"; {plural(n, 'item')} {'needs' if n == 1 else 'need'} a change on our side first"
 
     def gaps(need):
         return [t for t in tests if t["need"] == need and state(t["id"]) != "Met"]
