@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.4.1 (2026-10-19)
+- New rule: an accepted preview or dry-run does not prove the real step works. Learned from
+  Dinomarket: preview orders without the district were accepted, but that only checks the price,
+  not delivery, so the district stays an open question.
+
 ## 4.4.0 (2026-10-19)
 - Every reply now starts with a **short summary** in plain words (context, what we tested, what their
   API has, what is missing and why, what needs to be done). It is also the Jira comment.

@@ -59,7 +59,11 @@ Decision:
 6. **Fair, not harsh.** Only must-haves decide. Partly documented = Open, not missing.
 7. **Label assumptions.** Anything not in the doc or our code goes in `tech.assumptions` with how
    to verify it.
-8. **Clean output.** Plain words, short sentences, no em dashes. The email has no numbered
+8. **A test only proves what it tested.** A preview, dry-run or validation call that is accepted
+   proves the vendor's system took the input, not that the real step (delivery, fulfilment,
+   payment) works. Never mark a vendor requirement as "not needed" because a preview accepted
+   it without that field. Keep it Open and ask the vendor, and say exactly what the test covered.
+9. **Clean output.** Plain words, short sentences, no em dashes. The email has no numbered
    sub-points and no internal system names (OPMS, VI, plumAuth, karma).
 
 ---

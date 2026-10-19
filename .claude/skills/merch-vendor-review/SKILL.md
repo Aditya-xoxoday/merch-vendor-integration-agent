@@ -33,7 +33,9 @@ The full workflow is in `.claude/commands/merch-vendor-agent.md`. The short vers
 2. Every Yes/No needs evidence. The builder refuses without it.
 3. Never call production. Never copy a secret (`scripts/scan_secrets.py`; look at every image).
 4. Status mapping uses only PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELED, RETURNED.
-5. Clean output: plain words, no em dashes; the vendor email has no numbered sub-points and no internal names.
+5. A test only proves what it tested: an accepted preview or dry-run does not prove delivery or
+   fulfilment. Never drop a vendor requirement because a preview accepted the request without it.
+6. Clean output: plain words, no em dashes; the vendor email has no numbered sub-points and no internal names.
 
 ## Steps
 1. Read the docs: text, every image, links (`references/doc_intake.md`).
